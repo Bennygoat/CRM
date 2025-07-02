@@ -10,7 +10,6 @@ const ContractGenerator = ({ influencerName = "王小明", onFinish }) => {
       format: "A4",
     });
 
-    // ✅ 正確註冊中文字型
     doc.addFileToVFS("NotoSansTC-Regular.ttf", font);
     doc.addFont("NotoSansTC-Regular.ttf", "custom", "normal");
     doc.setFont("custom");
@@ -63,7 +62,6 @@ const ContractGenerator = ({ influencerName = "王小明", onFinish }) => {
     }
   };
 
-  // ✅ 正確 return 放在 generatePDF 外層
   return (
     <div className="p-4 space-y-4">
       <h2 className="text-xl font-bold">合約確認</h2>

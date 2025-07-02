@@ -27,7 +27,7 @@ const columnTitles = {
   CLOSED_WON: "成交"
 };
 
-export default function SalesFunnelBoard({ columns, setColumns, onCardDoubleClick,onContractGeneratedv}) {
+export default function SalesFunnelBoard({ columns, setColumns, onCardDoubleClick, onContractGenerated}) {
 
   const [overColumnId, setOverColumnId] = useState(null);
   const [activeCard, setActiveCard] = useState(null);
@@ -106,7 +106,7 @@ export default function SalesFunnelBoard({ columns, setColumns, onCardDoubleClic
         [targetColumn]: newTarget,
       });
 
-      if (targetColumn === "NEGOTIATION") {
+      if (targetColumn === "CLOSED_WON") {
         const opportunityId =
           activeItem?.opportunityId || activeItem?.id?.replace(/^c/, "");
         if (opportunityId) {

@@ -52,7 +52,7 @@ const CRMDashboard = () => {
   } = dashboardData;
 
   return (
-    <div className="p-6 space-y-8 bg-gray-50 min-h-screen">
+    <div className="p-6 space-y-8 min-h-screen">
       {/* --- KPI 卡片區塊 --- */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         {kpis.map((item, idx) => (
