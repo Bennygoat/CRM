@@ -7,7 +7,7 @@ import com.example.demo.dto.response.CCustomerProfileResponse;
 import com.example.demo.entity.CCustomer;
 import com.example.demo.security.CheckCustomerActive;
 import com.example.demo.security.CheckJwt;
-import com.example.demo.security.JwtTool;
+//import com.example.demo.security.JwtTool;
 import com.example.demo.service.CCustomerService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,7 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
+//import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,6 +47,7 @@ public class CCustomerController {
                 req.getCustomerName(),
                 req.getPassword(),
                 req.getEmail(),
+                req.getCustomerTel(), //TODO(joshk)
                 req.getAddress(),
                 req.getBirthday()
         );

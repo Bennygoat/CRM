@@ -63,12 +63,12 @@ public class CCustomerService {
     }
 
     // 檢視帳號是否已存在
-    public Boolean checkAccountExist(String account){
+    public Boolean checkAccountExist(String account) {
         return cCustomerRepo.findByAccount(account).isPresent();
     }
 
     // 檢視email是否已被註冊
-    public Boolean checkEmailExist(String email){
+    public Boolean checkEmailExist(String email) {
         return cCustomerRepo.existsByEmail(email);
     }
 
@@ -97,16 +97,17 @@ public class CCustomerService {
 
     // 註冊 + 加密
     public CCustomer register(String account
-                            , String customerName
-                            , String password
-                            , String email
-                            , String address
-                            , LocalDate birthday){
-        if(checkAccountExist(account)){
+            , String customerName
+            , String password
+            , String email
+            , String tel //TODO(joshk)
+            , String address
+            , LocalDate birthday) {
+        if (checkAccountExist(account)) {
             throw new AccountAlreadyExistsException(account);
         }
 
-        if(checkEmailExist(email)){
+        if (checkEmailExist(email)) {
             throw new EmailAlreadyExistsException(email);
         }
 
@@ -121,6 +122,7 @@ public class CCustomerService {
                 .customerName(customerName)
                 .password(encoder.encode(password))
                 .email(email)
+                .tel(tel) //TODO(joshk)
                 .address(address)
                 .birthday(birthday)
                 .customerCode(newCustomerCode) // ✨ 新增 #2: 在建立物件時設定 customerCode
@@ -156,17 +158,15 @@ public class CCustomerService {
     }
 
 
-
-
     // 登入驗證 (JWT + OUATH2)+ 拋給別人我已經登入的資訊供後續開發
-    public CCustomer login(String account, String password){
+    public CCustomer login(String account, String password) {
         // 測帳號 //暫時，之後要改成能有重設帳密功能，跳轉介面?發送EMAIL?顯示錯誤訊息?
         CCustomer loginCCustomer = cCustomerRepo.findByAccount(account)
                 .orElseThrow(() -> new ForgetAccountOrPasswordException(account, password));
 
         // 測密碼 //暫時，之後要改成能有重設帳密功能，跳轉介面?發送EMAIL?顯示錯誤訊息?
         String dbPassword = loginCCustomer.getPassword();
-        if(!encoder.matches(password, dbPassword)){
+        if (!encoder.matches(password, dbPassword)) {
             throw new ForgetAccountOrPasswordException(account, password);
         }
 
@@ -176,7 +176,7 @@ public class CCustomerService {
     // 檢視顧客資料: 顯示用戶個人基本資訊（帳號、姓名、電話、地址等）資料查詢、權限驗證（只能看自己的資料）
     public CCustomerProfileResponse getProfile(String account) {
         CCustomer customer = cCustomerRepo.findByAccount(account)
-                .orElseThrow(()-> new UsernameNotFoundException("找不到使用者: " + account));
+                .orElseThrow(() -> new UsernameNotFoundException("找不到使用者: " + account));
 
         // 【重要修改】將 Set<CustomerCoupon> 轉換為 List<CustomerCouponDto>
         List<CustomerCouponDto> couponDtos = customer.getCustomerCoupons().stream()
@@ -340,9 +340,11 @@ public class CCustomerService {
     }
 
     // ✨✨✨ 新增這個完整的方法 ✨✨✨
+
     /**
      * 更新客戶的總消費金額。
      * 此方法會查找客戶所有狀態為 COMPLETE 的訂單，並加總其金額。
+     *
      * @param customerId 要更新的客戶ID
      */
     @Transactional
