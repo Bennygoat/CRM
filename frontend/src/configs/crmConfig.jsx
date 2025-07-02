@@ -22,18 +22,23 @@ const crmConfig = {
         icon: <BarChartOutlined />,
       },
       {
-        path: '/crm/salesfunnel',
-        name: '銷售漏斗',
+        path: '/crm/company',
+        name: '客戶資料',
         icon: <BarChartOutlined />,
       },
       {
         path: '/crm/customer',
-        name: '客戶資料',
+        name: '聯絡人資料',
         icon: <BarChartOutlined />,
       },
       {
         path: '/crm/opportunity',
         name: '商機管理',
+        icon: <BarChartOutlined />,
+      },
+      {
+        path: '/crm/salesfunnel',
+        name: '銷售漏斗',
         icon: <BarChartOutlined />,
       },
     ],

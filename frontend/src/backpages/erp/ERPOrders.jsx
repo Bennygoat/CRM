@@ -1,9 +1,9 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { PlusOutlined } from '@ant-design/icons';
-import { ProTable, TableDropdown } from '@ant-design/pro-components';
-import { Button, Pagination, Space, Tag } from 'antd';
-import { useNavigate } from 'react-router-dom';
-import axios from '../../api/axiosBackend';
+import React, { useRef, useState, useEffect } from "react";
+import { PlusOutlined } from "@ant-design/icons";
+import { ProTable, TableDropdown } from "@ant-design/pro-components";
+import { Button, Pagination } from "antd";
+import { useNavigate } from "react-router-dom";
+import axios from "../../api/axiosBackend";
 
 const PAGE_SIZE = 10;
 
@@ -12,74 +12,107 @@ const ERPOrders = () => {
   const [data, setData] = useState([]);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchFilters, setSearchFilters] = useState({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const fetchData = async (page = 1) => {
+  const fetchData = async (page = 1, filters = {}) => {
     setLoading(true);
+    setData([]);
     try {
-      const res = await axios.get('/erp/orders', {
-        params: { page, pageSize: PAGE_SIZE },
+      const res = await axios.get("/sales-orders", {
+        params: {
+          ...filters,
+          page: page - 1,
+          size: PAGE_SIZE,
+          sort: "orderDate",
+        },
       });
-      setData(res.data.data);
-      setTotal(res.data.total);
+
+      setData(res.data.content);
+      setTotal(res.data.totalElements);
     } catch (error) {
-      console.error('訂單資料抓取失敗:', error);
+      console.error("訂單資料抓取失敗:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData(currentPage);
-  }, [currentPage]);
+    fetchData(currentPage, searchFilters);
+  }, [currentPage, searchFilters]);
 
   const columns = [
     {
-      title: '訂單編號',
-      dataIndex: 'orderNo',
-      copyable: true,
-      ellipsis: true,
-    },
-    {
-      title: '客戶名稱',
-      dataIndex: 'customerName',
-    },
-    {
-      title: '狀態',
-      dataIndex: 'status',
-      valueType: 'select',
-      valueEnum: {
-        pending: { text: '待處理', status: 'Default' },
-        processing: { text: '處理中', status: 'Processing' },
-        shipped: { text: '已出貨', status: 'Success' },
-        canceled: { text: '已取消', status: 'Error' },
+      title: "客戶名稱",
+      dataIndex: "customerName",
+      formItemProps: {
+        label: "客戶名稱",
+      },
+      fieldProps: {
+        placeholder: "請輸入客戶名稱",
+      },
+      search: {
+        transform: (value) => ({ keyword: value }),
       },
     },
     {
-      title: '總金額',
-      dataIndex: 'totalAmount',
+      title: "訂單編號",
+      dataIndex: "orderNumber",
+      copyable: true,
+      ellipsis: true,
+      hideInSearch: true,
+    },
+    {
+      title: "狀態",
+      dataIndex: "orderStatus",
+      valueType: "select",
+      valueEnum: {
+        PENDING_PAYMENT: { text: "待付款", status: "Default" },
+        PENDING_SHIPMENT: { text: "待出貨", status: "Processing" },
+        SHIPPED: { text: "已出貨", status: "Success" },
+        PENDING_PICKUP: { text: "已到門市", status: "Warning" },
+        COMPLETE: { text: "已完成", status: "Success" },
+        CANCELLED: { text: "已取消", status: "Error" },
+        RETURN_REQUESTED: { text: "申請退貨", status: "Warning" },
+        RETURNED: { text: "已退貨", status: "Default" },
+      },
+      search: {
+        transform: (value) => ({ orderStatus: value }),
+      },
+    },
+    {
+      title: "總金額",
+      dataIndex: "totalAmount",
       render: (_, record) => `$${record.totalAmount.toLocaleString()}`,
+      hideInSearch: true,
     },
     {
-      title: '建立日期',
-      dataIndex: 'createdAt',
-      valueType: 'date',
+      title: "建立日期",
+      dataIndex: "orderDate",
+      valueType: "date",
+      hideInSearch: true,
     },
     {
-      title: '操作',
-      valueType: 'option',
-      key: 'option',
+      title: "操作",
+      valueType: "option",
+      key: "option",
       render: (_, record) => [
-        <a key="edit" onClick={() => navigate(`/erp/order/${record.id}`)}>編輯</a>,
+        <a
+          key="edit"
+          onClick={() => navigate(`/erp/sales/orders/${record.salesOrderId}`)}
+        >
+          編輯
+        </a>,
         <TableDropdown
           key="dropdown"
           menus={[
-            { key: 'copy', name: '複製' },
-            { key: 'delete', name: '刪除' },
+            { key: "copy", name: "複製" },
+            { key: "delete", name: "刪除" },
           ]}
         />,
       ],
+      hideInSearch: true,
     },
   ];
 
@@ -90,18 +123,25 @@ const ERPOrders = () => {
         actionRef={actionRef}
         dataSource={data}
         loading={loading}
-        rowKey="id"
-        search={{ labelWidth: 'auto' }}
+        rowKey="salesOrderId"
+        search={{
+          labelWidth: "auto",
+          searchText: "搜尋",
+          resetText: "清除",
+        }}
         pagination={false}
         dateFormatter="string"
         headerTitle="訂單管理"
         options={false}
+        onSubmit={(params) => {
+          setSearchFilters(params);
+          setCurrentPage(1);
+        }}
         toolBarRender={() => [
           <Button
             key="new"
             icon={<PlusOutlined />}
             type="primary"
-            onClick={() => navigate('/erp/order/new')}
           >
             新增訂單
           </Button>,

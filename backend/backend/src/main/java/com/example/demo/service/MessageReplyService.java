@@ -12,7 +12,6 @@ import com.example.demo.repository.MessageRepo;
 import com.example.demo.repository.UserRepo;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -92,7 +91,7 @@ public class MessageReplyService {
         String senderName = null;
 
         if (reply.getSenderType() == SenderType.CUSTOMER && reply.getCCustomer() != null) {
-            senderName = reply.getCCustomer().getName();
+            senderName = reply.getCCustomer().getCustomerName(); //TODO(joshkuei): Change getCustomerName() to getName()
         } else if (reply.getSenderType() == SenderType.STAFF && reply.getUser() != null) {
             senderName = reply.getUser().getUserName();
         }

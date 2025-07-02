@@ -2,23 +2,36 @@ package com.example.demo.service;
 
 import com.example.demo.dto.request.RegisterRequest;
 import com.example.demo.dto.request.UpdateUserProfileRequest;
+import com.example.demo.dto.request.UserQueryRequest;
 import com.example.demo.dto.response.UserProfileResponse;
 import com.example.demo.entity.Authority;
 import com.example.demo.entity.CCustomer;
+import com.example.demo.entity.PasswordResetToken;
 import com.example.demo.entity.User;
 import com.example.demo.exception.AccountAlreadyExistsException;
 import com.example.demo.exception.ForgetAccountOrPasswordException;
 import com.example.demo.exception.UsernameNotFoundException;
 import com.example.demo.repository.AuthorityRepo;
 import com.example.demo.repository.CCustomerRepo;
+import com.example.demo.repository.PasswordResetTokenRepo;
 import com.example.demo.repository.UserRepo;
+import com.example.demo.specification.UserSpecification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.AccessDeniedException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,12 +40,14 @@ public class UserService {
     private final CCustomerRepo cCustomerRepo;
     private final AuthorityRepo authorityRepo;
     private final BCryptPasswordEncoder encoder;
+    private final PasswordResetTokenRepo tokenRepo;
 
     // 建構自注入userRepo、encoder
-    public UserService(UserRepo userRepo, CCustomerRepo cCustomerRepo, AuthorityRepo authorityRepo) {
+    public UserService(UserRepo userRepo, CCustomerRepo cCustomerRepo, AuthorityRepo authorityRepo, PasswordResetTokenRepo tokenRepo) {
         this.userRepo = userRepo;
         this.cCustomerRepo = cCustomerRepo;
         this.authorityRepo = authorityRepo;
+        this.tokenRepo = tokenRepo;
         this.encoder = new BCryptPasswordEncoder(); // 或改為在外部注入
     }
 
@@ -130,7 +145,6 @@ public class UserService {
         return loginUser;
     }
 
-    // user拿到admin給的一次密碼後，自己更改密碼+加密
 
     // user檢視自己資料
     public UserProfileResponse getUserProfileByAccount(String account) {
@@ -189,7 +203,11 @@ public class UserService {
         );
     }
 
-    //ID找帳號
+    // todo: 6/30，我的前端畫面想要admin能以列表方式查閱所有user，並能在該介面進行基礎資料修正，或是點擊進入查閱詳細資訊，進行詳細資料、權限修改
+    // 需要開那些api?我現有的getUserIdByAccount(String account)應該只是像是搜尋列單筆查資料，也不能針對結果進行修改吧?還是可以?
+    // admin查閱所有user, findbyaccount, findbyauthorities?
+
+    //ID找帳號，admin可以用這個方式進行資料更改嗎?
     public Long getUserIdByAccount(String account) {
         return userRepo.findByAccount(account)
                 .map(User::getUserId)
@@ -197,11 +215,97 @@ public class UserService {
     }
 
 
-    // 不同權限進入不同模組，如何管理權限?
+    @Transactional(readOnly = true)
+    public Page<UserProfileResponse> queryUsers(UserQueryRequest req) {
+        try {
+        Specification<User> spec = UserSpecification.build(req);
+        Pageable pageable = PageRequest.of(req.getPage(), req.getSize(), Sort.by("userId").descending());
 
-    // admin查閱所有user, findbyaccount, findbyauthorities?
-    // 更動使用者權限、更動激活時間、使用者忘記密碼，可通知admin，強制重設為一次姓密碼
-    // todo
+        return userRepo.findAll(spec, pageable)
+                .map(user -> new UserProfileResponse(
+                        user.getUserId(),
+                        user.getAccount(),
+                        user.getEmail(),
+                        user.getUserName(),
+                        user.isActive(),
+                        user.getRoleName(),
+                        Optional.ofNullable(user.getAuthorities())  // ✅ null 安全處理
+                                .orElse(Collections.emptyList())
+                                .stream()
+                                .map(Authority::getCode)
+                                .collect(Collectors.toList()),
+                        user.getAccessStartDate(),
+                        user.getAccessEndDate(),
+                        user.getLastLogin()
+                ));
+        } catch (Exception e) {
+            System.out.println("🔥 查詢使用者發生錯誤：" + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("使用者查詢失敗", e); // ✅ 改這裡
+        }
+    }
+
+    //用上方就可以刷新執行以下功能?
+    //rolename找帳號?
+    //authoritycode找帳號?
+    //激活時間區間找帳號?
+    //停權找帳號?
+    //激活中找帳號?...請補充我還能幹嘛
+
+
+
+    // todo: 6/30，請教學如果系統使用者忘記密碼，userflow通常長怎樣?這裡需要加什麼功能才會更完整?
+    // 忘記密碼記性驗證gmail api?user拿到一次密碼後，自己更改密碼+加密?
+    // 寄送一次性 token（不含 email 發送）
+    public String generateResetToken(String email) {
+        // 檢查 email 是否存在
+        User user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("查無此信箱"));
+
+        // 清除舊的 token（可選）
+        List<PasswordResetToken> oldTokens = tokenRepo.findByEmailAndUsedFalse(email);
+        oldTokens.forEach(t -> t.setUsed(true));
+        tokenRepo.saveAll(oldTokens);
+
+        // 產生新 token 並儲存
+        String token = UUID.randomUUID().toString();
+        PasswordResetToken resetToken = new PasswordResetToken();
+        resetToken.setEmail(email);
+        resetToken.setToken(token);
+        resetToken.setCreatedAt(LocalDateTime.now());
+        resetToken.setExpiresAt(LocalDateTime.now().plusMinutes(30)); // 30 分鐘有效
+        resetToken.setUsed(false);
+
+        tokenRepo.save(resetToken);
+
+        return token; // 目前回傳給前端，未來可整合 email 寄送
+    }
+
+
+    // 重設密碼（驗證 token、重設）
+    @Transactional
+    public void resetPassword(String token, String newPassword) {
+        PasswordResetToken resetToken = tokenRepo.findByTokenAndUsedFalse(token)
+                .orElseThrow(() -> new IllegalArgumentException("無效或過期的 token"));
+
+        if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Token 已過期");
+        }
+
+        User user = userRepo.findByEmail(resetToken.getEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("找不到帳號"));
+
+        validatePasswordStrength(newPassword);
+        user.setPassword(encoder.encode(newPassword));
+        userRepo.save(user);
+
+        // 標記 token 為已使用
+        resetToken.setUsed(true);
+        tokenRepo.save(resetToken);
+    }
+
+
+    // 更動單一使用者權限、更動激活時間、使用者忘記密碼，可通知admin，強制重設為一次姓密碼
     public UserProfileResponse updateProfileByAdmin(String account, UpdateUserProfileRequest request){
         User user = userRepo.findByAccount(account)
                 .orElseThrow(() -> new UsernameNotFoundException("帳號不存在: " + account));
@@ -261,13 +365,11 @@ public class UserService {
         CCustomer customer = cCustomerRepo.findByAccount(account)
                 .orElseThrow(() -> new UsernameNotFoundException("顧客帳號不存在"));
         customer.setActive(false);
-        customer.setDeleted(true);
+        customer.setIsDeleted(true);
         cCustomerRepo.save(customer);
     }
 
     // admin, 小編(cms agent?)進行前台內容管理，刪除下嫁文章、跑馬燈、輪播圖、管理活動等
-
-    // admin, 小編(cms agent?)與ccustomer進行互動，更改訂單
 
     // admin調閱log
 

@@ -1,5 +1,5 @@
 {
-  "name": "vscode",
+  "name": "frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -18,12 +18,14 @@
     "@emotion/css": "^11.13.5",
     "antd": "^5.26.0",
     "axios": "^1.10.0",
+    "jspdf": "^3.0.1",
     "react": "^19.1.0",
     "react-countup": "^6.5.3",
     "react-dom": "^19.1.0",
     "react-icons": "^5.5.0",
     "react-intersection-observer": "^9.16.0",
     "react-router-dom": "^7.6.0",
+    "recharts": "^3.0.2",
     "swiper": "^11.2.8",
     "zustand": "^5.0.5"
   },

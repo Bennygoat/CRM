@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import useBackUserStore from "../stores/useBackUserStore";
 import backgroundImage from "../assets/signbackground.jpg";
@@ -7,8 +7,12 @@ function BackLogin() {
   const navigate = useNavigate();
   const { loginBackUser } = useBackUserStore();
 
+  useEffect(() => {
+    document.body.classList.remove("cursor-frontend");
+  }, []);
+
   const [account, setAccount] = useState("admin");
-  const [password, setPassword] = useState("admin123");
+  const [password, setPassword] = useState("Admin123!@#");
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -27,10 +31,11 @@ function BackLogin() {
         localStorage.setItem("rememberedAccount", account);
       }
 
-      const role = user?.role;
-      if (role === "admin") navigate("/users");
-      else if (role === "editor") navigate("/cms");
-      else if (role === "manager") navigate("/erp");
+      const role = user?.roleName?.toLowerCase();
+      console.log("登入成功，角色:", role);
+      if (role === "admin") navigate("/users/management");
+      else if (role === "editor") navigate("/crm/dashboard");
+      else if (role === "manager") navigate("/erp/dashboard");
       else navigate("/");
     } catch (err) {
       console.error("登入失敗:", err);

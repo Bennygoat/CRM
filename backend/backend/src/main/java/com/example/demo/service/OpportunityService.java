@@ -1,7 +1,9 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.request.OpportunityPriorityRequest;
 import com.example.demo.dto.request.OpportunityRequest;
 import com.example.demo.dto.response.OpportunityDto;
+import com.example.demo.dto.response.SalesFunnelDto;
 import com.example.demo.enums.OpportunityStage;
 import com.example.demo.enums.OpportunityStatus;
 import jakarta.persistence.EntityNotFoundException;
@@ -9,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 public interface OpportunityService {
@@ -69,7 +72,7 @@ public interface OpportunityService {
                                                   LocalDate closeDateBefore,
                                                   Pageable pageable);
 
-    // ----- 以下是基於 Repository 方法的直接查詢，通常由 searchOpportunities 方法整合或用於特定查詢 -----
+    // ----- searchOpportunities 方法整合或用於特定查詢 -----
 
     /**
      * 根據客戶ID查詢其所有商機的分頁列表。
@@ -95,6 +98,8 @@ public interface OpportunityService {
      */
     Page<OpportunityDto> findByStage(OpportunityStage stage, Pageable pageable);
 
+    // ----- 以下為星級評分 -----
+
     /**
      * 為指定的商機添加或更新評分。
      * @param opportunityId 要評分的商機的唯一識別碼。
@@ -105,4 +110,14 @@ public interface OpportunityService {
      * @throws IllegalArgumentException 如果評分分數無效 (例如不在 1-3 範圍內)。
      */
     OpportunityDto rateOpportunity(Long opportunityId, Long userId, int ratingScore);
+
+    OpportunityDto setPriority(Long opportunityId, OpportunityPriorityRequest request);
+
+    // ----- 銷售漏斗 -----
+
+    /**
+     * 獲取用於銷售漏斗的匯總資料。
+     * @return 一個列表，其中每個元素代表一個銷售階段及其相關數據。
+     */
+    List<SalesFunnelDto> getSalesFunnelData();
 }

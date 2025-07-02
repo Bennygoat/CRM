@@ -27,7 +27,7 @@ public class SalesOrderSpecification {
                 predicates.add(criteriaBuilder.equal(root.get("customer").get("customerId"), customerId));
             }
             if (status != null) {
-                predicates.add(criteriaBuilder.equal(root.get("status"), status));
+                predicates.add(criteriaBuilder.equal(root.get("orderStatus"), status));
             }
 
             if (startDate != null) {
@@ -40,11 +40,16 @@ public class SalesOrderSpecification {
 
 
             if (StringUtils.hasText(keyword)) {
-                predicates.add(criteriaBuilder.like(root.get("orderNumber"), "%" + keyword + "%"));
+                String likePattern = "%" + keyword.toLowerCase() + "%";
+                predicates.add(criteriaBuilder.or(
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("orderNumber")), likePattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("customer").get("customerName")), likePattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("remarks")), likePattern)
+                ));
             }
 
 
-            query.orderBy(criteriaBuilder.desc(root.get("orderDate")), criteriaBuilder.desc(root.get("salesOrderId")));
+//            query.orderBy(criteriaBuilder.desc(root.get("orderDate")), criteriaBuilder.desc(root.get("salesOrderId")));
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>物流測試頁面</title>
+    <style>
+        body { font-family: sans-serif; padding: 2em; }
+        .container { max-width: 500px; margin: auto; }
+        input, button { font-size: 1em; padding: 0.5em; margin-top: 0.5em; width: 100%; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; margin-top: 1em; }
+        button:hover { background-color: #0056b3; }
+        .group { border: 1px solid #ccc; padding: 1em; margin-top: 1em; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>綠界全方位物流測試</h1>
+
+    <div class="group">
+        <label for="orderId">請輸入訂單 ID (Order ID):</label>
+        <input type="number" id="orderId" placeholder="例如: 123">
+    </div>
+
+    <div class="group">
+        <h3>超商取貨 (CVS)</h3>
+        <button onclick="startLogistics('CVS', 'FAMI')">選擇 全家 B2C</button>
+        <button onclick="startLogistics('CVS', 'UNIMART')">選擇 統一超商(7-11) B2C</button>
+    </div>
+
+    <div class="group">
+        <h3>宅配 (HOME)</h3>
+        <button onclick="startLogistics('HOME', 'TCAT')">選擇 黑貓宅急便</button>
+        <button onclick="startLogistics('HOME', 'ECAN')">選擇 宅配通</button>
+    </div>
+</div>
+
+<script>
+    function startLogistics(type, subType) {
+        const orderId = document.getElementById('orderId').value;
+        if (!orderId) {
+            alert('請先輸入訂單 ID！');
+            return;
+        }
+
+        const url = `/api/logistics/select/${orderId}?type=${type}&subType=${subType}`;
+
+        console.log('正在導向: ' + url);
+        window.location.href = url;
+    }
+</script>
+
+</body>
+</html>

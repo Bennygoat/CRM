@@ -2,34 +2,20 @@ import React, { useState } from 'react';
 
 function Messages() {
   const [input, setInput] = useState('');
-  const [image, setImage] = useState(null);
   const [messages, setMessages] = useState([
     { type: 'bot', text: '您好，請問需要什麼協助？' },
   ]);
 
   const handleSend = () => {
-    if (!input && !image) return;
+    if (!input) return;
 
     const newMessage = {
       type: 'user',
       text: input,
-      image: image,
     };
 
     setMessages((prev) => [...prev, newMessage]);
     setInput('');
-    setImage(null);
-  };
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImage(reader.result);
-    };
-    reader.readAsDataURL(file);
   };
 
   return (
@@ -37,7 +23,7 @@ function Messages() {
       <h2 className="text-base font-bold text-gray-800">與客服訊息</h2>
 
       {/* 訊息列表 */}
-      <div className="h-80 overflow-y-auto border border-gray-200 rounded p-4 bg-white space-y-3">
+      <div className="h-100 overflow-y-auto border border-gray-200 rounded p-4 bg-white space-y-3">
         {messages.map((msg, idx) => (
           <div
             key={idx}
@@ -53,13 +39,6 @@ function Messages() {
               }`}
             >
               {msg.text && <p className="text-gray-800">{msg.text}</p>}
-              {msg.image && (
-                <img
-                  src={msg.image}
-                  alt="uploaded"
-                  className="mt-2 rounded max-w-full"
-                />
-              )}
             </div>
           </div>
         ))}
@@ -74,15 +53,6 @@ function Messages() {
           placeholder="輸入訊息..."
           className="flex-1 border border-gray-300 rounded px-3 py-2 w-full"
         />
-        <label className="cursor-pointer text-blue-600 text-sm">
-          上傳圖片
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="hidden"
-          />
-        </label>
         <button
           onClick={handleSend}
           className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"

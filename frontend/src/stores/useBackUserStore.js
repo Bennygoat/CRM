@@ -1,53 +1,67 @@
 import { create } from 'zustand';
 import axiosInstance from '../api/axiosBackend';
 
-const useBackUserStore = create((set) => {
-  const storedToken = localStorage.getItem('back_token');
-  const storedUser = localStorage.getItem('back_user');
-
-  if (storedToken) {
-    axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+// ✅ 安全解析 localStorage 中的 JSON
+function getParsedStorage(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw && raw !== 'undefined') {
+      return JSON.parse(raw);
+    }
+  } catch (e) {
+    console.warn(`⚠️ 無法解析 localStorage 的 ${key}，已清除`);
+    localStorage.removeItem(key);
   }
+  return null;
+}
 
-  return {
-    backUser: storedUser ? JSON.parse(storedUser) : null,
-    backToken: storedToken || null,
-    isBackAuthenticated: !!storedToken,
+// ✅ 初始化 localStorage 中的資料
+const storedToken = localStorage.getItem('back_token');
+const storedUser = getParsedStorage('back_user');
 
-    loginBackUser: async (credentials) => {
-      try {
-        const res = await axiosInstance.post('/backauth/login', credentials);
-        const { token, user } = res.data;
+// ✅ 設定預設的 axios header
+if (storedToken) {
+  axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+}
 
-        localStorage.setItem('back_token', token);
-        localStorage.setItem('back_user', JSON.stringify(user));
-        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+const useBackUserStore = create((set) => ({
+  backUser: storedUser,
+  backToken: storedToken || null,
+  isBackAuthenticated: !!storedToken,
 
-        set({ backUser: user, backToken: token, isBackAuthenticated: true });
-        return user; // ✅ 回傳 user，供 login 後導向使用
-      } catch (error) {
-        console.error('後台登入失敗:', error);
-        throw error;
-      }
-    },
+  loginBackUser: async (credentials) => {
+    try {
+      const res = await axiosInstance.post('/user/auth/login', credentials);
+      const { token, ...user } = res.data; 
 
-    logoutBackUser: () => {
-      delete axiosInstance.defaults.headers.common['Authorization'];
-      localStorage.removeItem('back_token');
-      localStorage.removeItem('back_user');
-      set({ backUser: null, backToken: null, isBackAuthenticated: false });
-    },
+      localStorage.setItem('back_token', token);
+      localStorage.setItem('back_user', JSON.stringify(user));
+      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-    fetchBackProfile: async () => {
-      try {
-        const res = await axiosInstance.get('/backauth/profile');
-        set({ backUser: res.data });
-        localStorage.setItem('back_user', JSON.stringify(res.data));
-      } catch (err) {
-        console.error('後台使用者資訊取得失敗', err);
-      }
-    },
-  };
-});
+      set({ backUser: user, backToken: token, isBackAuthenticated: true });
+      return user;
+    } catch (error) {
+      console.error('後台登入失敗:', error);
+      throw error;
+    }
+  },
+
+  logoutBackUser: () => {
+    delete axiosInstance.defaults.headers.common['Authorization'];
+    localStorage.removeItem('back_token');
+    localStorage.removeItem('back_user');
+    set({ backUser: null, backToken: null, isBackAuthenticated: false });
+  },
+
+  fetchBackProfile: async () => {
+    try {
+      const res = await axiosInstance.get('/backauth/profile');
+      set({ backUser: res.data });
+      localStorage.setItem('back_user', JSON.stringify(res.data));
+    } catch (err) {
+      console.error('後台使用者資訊取得失敗', err);
+    }
+  },
+}));
 
 export default useBackUserStore;

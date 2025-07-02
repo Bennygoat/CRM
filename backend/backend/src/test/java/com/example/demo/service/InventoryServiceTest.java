@@ -6,8 +6,11 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.example.demo.entity.*;
+import com.example.demo.entity.Inventory;
+import com.example.demo.entity.InventoryMovement;
 import com.example.demo.enums.SalesOrderStatus;
 import com.example.demo.repository.*;
+import com.example.demo.service.erp.InventoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,7 +67,7 @@ class InventoryServiceTest {
 
         receivingUser = new User();
         receivingUser.setUserId(1L);
-        receivingUser.setUsername("TestUser");
+        receivingUser.setUserName("TestUser");
 
         sampleProduct = new Product();
         sampleProduct.setProductId(1L);
@@ -84,7 +87,7 @@ class InventoryServiceTest {
         PurchaseOrderDetail detail1 = new PurchaseOrderDetail();
         detail1.setItemId(10L);
         detail1.setProduct(sampleProduct);
-        detail1.setWarehouseId(sampleWarehouse.getWarehouseId());
+        detail1.setWarehouse(sampleWarehouse);
         detail1.setQuantity(new BigDecimal("20"));
         samplePurchaseOrder.addDetail(detail1);
 
@@ -148,7 +151,7 @@ class InventoryServiceTest {
 
         User operator = new User();
         operator.setUserId(1L);
-        operator.setUsername("TestUser");
+        operator.setUserName("TestUser");
 
         Warehouse warehouse = new Warehouse();
         warehouse.setWarehouseId(1L);
@@ -163,7 +166,7 @@ class InventoryServiceTest {
         when(salesOrderRepository.findById(301L)).thenReturn(Optional.of(salesOrder));
         when(userRepository.findById(1L)).thenReturn(Optional.of(operator)); // This was missing!
         when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse)); // This was missing!
-        when(inventoryRepository.deductStock(1L, 1L, new BigDecimal("10"))).thenReturn(1);
+//        when(inventoryRepository.deductStock(1L, 1L, new BigDecimal("10"))).thenReturn(1);
         when(inventoryRepository.findByProductAndWarehouse(product1, warehouse)).thenReturn(Optional.of(inventory));
         when(salesShipmentRepository.save(any(SalesShipment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 

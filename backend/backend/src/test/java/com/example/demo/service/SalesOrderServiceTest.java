@@ -1,11 +1,10 @@
 package com.example.demo.service;
 
 
-import com.example.demo.dto.SalesOrderCreateDTO;
-import com.example.demo.dto.SalesOrderDetailCreateDTO;
-import com.example.demo.dto.SalesOrderSummaryDTO;
+import com.example.demo.dto.erp.SalesOrderCreateDTO;
+import com.example.demo.dto.erp.SalesOrderDetailCreateDTO;
+import com.example.demo.dto.erp.SalesOrderSummaryDTO;
 import com.example.demo.entity.BCustomer;
-import com.example.demo.entity.CustomerBase;
 import com.example.demo.entity.Product;
 import com.example.demo.entity.SalesOrder;
 import com.example.demo.enums.PaymentStatus;
@@ -15,6 +14,7 @@ import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repository.CustomerBaseRepository;
 import com.example.demo.repository.ProductRepository;
 import com.example.demo.repository.SalesOrderRepository;
+import com.example.demo.service.erp.SalesOrderService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,7 +31,6 @@ import org.springframework.data.jpa.domain.Specification;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -67,7 +66,7 @@ class SalesOrderServiceTest {
         mockProduct = new Product();
         mockProduct.setProductId(101L);
         mockProduct.setIsActive(true);
-        mockProduct.setSalable(true);
+        mockProduct.setIsSalable(true);
 
         SalesOrderDetailCreateDTO detailDTO = new SalesOrderDetailCreateDTO();
         detailDTO.setProductId(101L);
@@ -95,7 +94,7 @@ class SalesOrderServiceTest {
         Product mockProduct = new Product();
         mockProduct.setProductId(101L);
         mockProduct.setIsActive(true);
-        mockProduct.setSalable(true);
+        mockProduct.setIsSalable(true);
         when(productRepository.findById(101L)).thenReturn(Optional.of(mockProduct));
 
 
@@ -112,7 +111,7 @@ class SalesOrderServiceTest {
         assertNotNull(result);
         assertEquals(99L, result.getSalesOrderId());
         assertEquals(SalesOrderStatus.CONFIRMED, result.getOrderStatus());
-        assertEquals(PaymentStatus.NONPAYMENT, result.getPaymentStatus());
+        assertEquals(PaymentStatus.UNPAID, result.getPaymentStatus());
         assertEquals(1, result.getDetails().size());
         assertEquals(0, new BigDecimal("1000").compareTo(result.getTotalAmount()));
     }
@@ -156,7 +155,7 @@ class SalesOrderServiceTest {
         inactiveProduct.setProductId(101L);
         inactiveProduct.setName("測試產品");
         inactiveProduct.setIsActive(false);
-        inactiveProduct.setSalable(true);
+        inactiveProduct.setIsSalable(true);
 
         when(customerBaseRepository.findById(1L)).thenReturn(Optional.of(activeCustomer));
         when(productRepository.findById(101L)).thenReturn(Optional.of(inactiveProduct));

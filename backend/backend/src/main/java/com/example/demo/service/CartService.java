@@ -9,19 +9,16 @@ import com.example.demo.repository.CartDetailRepository;
 import com.example.demo.repository.CartRepository;
 import com.example.demo.repository.ProductRepository;
 
+import com.example.demo.service.erp.InventoryService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -183,6 +180,83 @@ public class CartService {
         entityManager.refresh(cart); // Refresh cart to get latest state of details
         return mapToCartViewDto(cart);
     }
+
+    /**
+     * 批次新增多個商品到購物車。
+     * 這個方法經過優化，可以減少資料庫查詢次數。
+     * @param customerId 顧客 ID
+     * @param itemsToAdd 要新增的商品列表
+     * @return 更新後的購物車視圖
+     */
+    @Transactional
+    public CartViewDto addMultipleItemsToCart(Long customerId, List<AddItemRequestDto> itemsToAdd) {
+        if (itemsToAdd == null || itemsToAdd.isEmpty()) {
+            throw new IllegalArgumentException("商品列表不可為空");
+        }
+
+        // 1. 取得使用者的購物車
+        Cart cart = findOrCreateCartByUser(customerId);
+
+        // 2.【效能優化】一次性獲取所有請求的商品資訊
+        List<Long> productIds = itemsToAdd.stream()
+                .map(AddItemRequestDto::getProductid)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, Product> productMap = productRepository.findAllById(productIds).stream()
+                .collect(Collectors.toMap(Product::getProductId, product -> product));
+
+        // 3.【效能優化】一次性獲取購物車中已存在的相關商品明細
+        Map<Long, CartDetail> existingDetailsMap = cartDetailRepository.findByCartAndProductIn(cart, productMap.values()).stream()
+                .collect(Collectors.toMap(detail -> detail.getProduct().getProductId(), detail -> detail));
+
+        // 4.【庫存預先檢查】在進行任何修改前，先檢查所有商品的庫存是否充足
+        for (AddItemRequestDto item : itemsToAdd) {
+            Product product = productMap.get(item.getProductid());
+            if (product == null) {
+                throw new EntityNotFoundException("找不到商品 ID: " + item.getProductid());
+            }
+
+            int quantityToAdd = item.getQuantity();
+            CartDetail existingDetail = existingDetailsMap.get(item.getProductid());
+            int finalQuantity = (existingDetail != null) ? existingDetail.getQuantity() + quantityToAdd : quantityToAdd;
+
+            BigDecimal availableStock = inventoryService.getAvailableStock(item.getProductid());
+            if (availableStock.compareTo(BigDecimal.valueOf(finalQuantity)) < 0) {
+                throw new IllegalStateException("商品 [" + product.getName() + "] 庫存不足 (需求總數: " + finalQuantity + ", 可用庫存: " + availableStock + ")");
+            }
+        }
+
+        // 5.【執行更新】遍歷商品列表，更新或建立 CartDetail
+        List<CartDetail> detailsToSave = new ArrayList<>();
+        for (AddItemRequestDto item : itemsToAdd) {
+            Product product = productMap.get(item.getProductid());
+            CartDetail detail = existingDetailsMap.get(item.getProductid());
+
+            if (detail != null) {
+                // 如果商品已存在，更新數量
+                detail.setQuantity(detail.getQuantity() + item.getQuantity());
+                detailsToSave.add(detail);
+            } else {
+                // 如果是新商品，建立新的 CartDetail
+                CartDetail newDetail = new CartDetail();
+                newDetail.setCart(cart);
+                newDetail.setProduct(product);
+                newDetail.setQuantity(item.getQuantity());
+                newDetail.setAddat(LocalDateTime.now());
+                detailsToSave.add(newDetail);
+            }
+        }
+
+        // 6.【效能優化】一次性將所有變更儲存到資料庫
+        cartDetailRepository.saveAll(detailsToSave);
+
+        // 7. 刷新並回傳最新的購物車視圖
+        entityManager.flush();
+        entityManager.refresh(cart);
+        return mapToCartViewDto(cart);
+    }
+
     /**
      * 更新購物車項目數量
      */

@@ -24,7 +24,7 @@ public class JwtUserPayload {
         return new JwtUserPayload(
                 c.getCustomerId(),
                 c.getAccount(),
-                c.getCustomerName(),
+                c.getCustomerName(), //TODO(joshkuei): Changed from customerName() to name().
                 "CUSTOMER",
                 null
         );

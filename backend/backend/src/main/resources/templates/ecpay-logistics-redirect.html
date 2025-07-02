@@ -7,7 +7,7 @@
 <p>頁面跳轉中，請稍候...</p>
 
 <form id="ecpay-form" th:action="${logisticsUrl}" method="post">
-    <input type="hidden" th:each="param : ${params}" th:name="${param.key}" th:value="${param.value}" />
+    <input type="hidden" th:each="entry : ${params}" th:name="${entry.key}" th:value="${entry.value}" />
 </form>
 
 </body>

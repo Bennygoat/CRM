@@ -9,16 +9,7 @@ import java.util.List;
 import com.example.demo.enums.PurchaseOrderStatus;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -36,8 +27,20 @@ public class PurchaseOrder {
     @Column(name = "order_number", unique = true, nullable = false, length = 50)
     private String orderNumber;
 
-    @Column(name = "supplier_id", nullable = false)
-    private Long supplierId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supplier_id", nullable = false)
+    private Supplier supplier;
+
+    public Long getSupplierId() {
+        return (supplier != null) ? supplier.getSupplierId() : null;
+    }
+    public void setSupplierId(Long supplierId) {
+
+        if (this.supplier == null) {
+            this.supplier = new Supplier();
+        }
+    }
 
     @Column(name = "warehouse_id", nullable = true)
     private Long warehouseId;

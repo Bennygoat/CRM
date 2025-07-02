@@ -23,7 +23,7 @@ function Login() {
     e.preventDefault();
     setError(null);
 
-    try {
+    try {     
       await login({ account, password });
       navigate("/User");
     } catch (err) {

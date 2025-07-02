@@ -19,7 +19,7 @@ const Navbar = () => {
     <>
       <nav className="
         fixed top-4 left-1/2 transform -translate-x-1/2 z-50 
-        w-[95%] max-w-7xl px-6 py-3 
+        w-[85.2%] max-w-8xl px-6 py-3 
         bg-white/30 backdrop-blur-md 
         border border-white/20 shadow-md 
         rounded-full transition-all duration-300
@@ -73,23 +73,20 @@ const Navbar = () => {
 
       {/* 手機選單（滑出 + 遮罩） */}
       <div
-        className={`fixed inset-0 z-[45] transition-all duration-300 md:hidden ${
-          isMobileMenuOpen ? "visible opacity-100" : "invisible opacity-0"
-        }`}
+        className={`fixed inset-0 z-[45] transition-all duration-300 md:hidden ${isMobileMenuOpen ? "visible opacity-100" : "invisible opacity-0"
+          }`}
       >
         {/* 遮罩背景 */}
         <div
-          className={`absolute inset-0 bg-black transition-opacity duration-300 ${
-            isMobileMenuOpen ? "bg-opacity-40" : "bg-opacity-0"
-          }`}
+          className={`absolute inset-0 bg-black transition-opacity duration-300 ${isMobileMenuOpen ? "bg-opacity-40" : "bg-opacity-0"
+            }`}
           onClick={closeMobileMenu}
         ></div>
 
         {/* 側邊滑出選單 */}
         <div
-          className={`absolute top-0 left-0 h-full w-72 bg-white/60 backdrop-blur-md border-r border-white/20 text-gray-800 transform transition-transform duration-300 ease-in-out rounded-tr-2xl rounded-br-2xl shadow-lg ${
-            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+          className={`absolute top-0 left-0 h-full w-72 bg-white/60 backdrop-blur-md border-r border-white/20 text-gray-800 transform transition-transform duration-300 ease-in-out rounded-tr-2xl rounded-br-2xl shadow-lg ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
         >
           <div className="flex justify-between items-center px-4 py-4 border-b border-gray-300">
             <span className="text-lg font-bold">良野選單</span>

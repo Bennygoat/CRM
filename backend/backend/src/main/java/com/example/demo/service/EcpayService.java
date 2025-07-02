@@ -68,110 +68,149 @@ public class EcpayService {
     }
 
     /**
-     * 【新增】準備物流選擇頁面所需的所有參數
-     * 這個方法會在一個交易內完成，避免 LazyInitializationException
-     * @param orderId 訂單ID
-     * @param model Spring UI Model
+     * 【新增】準備物流選擇頁面所需的參數
      */
-    @Transactional(readOnly = true) // 標示為唯讀交易，效能更好
-    public void prepareLogisticsRedirect(Long orderId, Model model) {
-        // 1. 根據 orderId 找到訂單
+    @Transactional(readOnly = true)
+    public void prepareLogisticsRedirect(Long orderId, String logisticsType, String logisticsSubType, Model model) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("找不到訂單 ID: " + orderId));
 
-        // 2. 呼叫現有的方法產生需要的參數
-        Map<String, String> params = this.createLogisticsRedirectParams(order);
+        Map<String, String> params = this.createLogisticsRedirectParams(order, logisticsType, logisticsSubType);
 
-        // 3. 將參數和目標 URL 加入 Model
-        model.addAttribute("logisticsUrl", ecpayProperties.getLogistics().getUrl());
+        // 【優化】動態組合目標 URL
+        String baseUrl = ecpayProperties.getLogistics().getUrl();
+        String logisticsUrl;
+        if ("CVS".equalsIgnoreCase(logisticsType)) {
+            logisticsUrl = baseUrl + "/Express/map"; // 超商導向電子地圖
+        } else {
+            logisticsUrl = baseUrl + "/Express/Create"; // 宅配導向地址填寫頁
+        }
+
+        model.addAttribute("logisticsUrl", logisticsUrl);
         model.addAttribute("params", params);
     }
 
-    // createLogisticsRedirectParams 方法簽名不變，但現在由 prepareLogisticsRedirect 呼叫
-    /**
-     * 【修改】產生用於導向到「全方位物流 RWD 頁面」的請求參數 Map
-     * @param order 您的訂單實體
-     * @return 包含所有參數的 Map，可直接用於渲染 Thymeleaf 表單
-     */
-    public Map<String, String> createLogisticsRedirectParams(Order order) {
-
-        EcpayProperties.Logistics logisticsConfig = ecpayProperties.getLogistics();
+    public Map<String, String> createLogisticsRedirectParams(Order order, String logisticsType, String logisticsSubType) {
+        EcpayProperties.Logistics config = ecpayProperties.getLogistics();
         Map<String, String> params = new TreeMap<>();
 
-        params.put("MerchantID", logisticsConfig.getMerchantId());
+        params.put("MerchantID", config.getMerchantId());
         params.put("MerchantTradeNo", order.getMerchantTradeNo());
         params.put("MerchantTradeDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")));
-        params.put("LogisticsType", "CVS"); // CVS 表示超商取貨
-        params.put("LogisticsSubType", "UNIMART_C2C"); // 這裡以統一超商 C2C 為例，可改為 FAMI, HILIFE
+        params.put("LogisticsType", logisticsType);
+        params.put("LogisticsSubType", logisticsSubType);
         params.put("GoodsAmount", String.valueOf(order.getTotalAmount().longValue()));
-
-        // ====================== 【新增的關鍵邏輯】 ======================
-        if (order.getPaymentMethod() == PaymentMethod.CASH_ON_DELIVERY) {
-            params.put("IsCollection", "Y"); // Y: 代收貨款
-        } else {
-            params.put("IsCollection", "N"); // N: 純取貨
-        }
-        // ===============================================================
-
         params.put("GoodsName", "網站商品一批");
-        params.put("SenderName", logisticsConfig.getSenderName());
-        params.put("ServerReplyURL", logisticsConfig.getServerReplyUrl());
-        params.put("ClientReplyURL", logisticsConfig.getClientReplyUrl());
 
-        // 計算 CheckMacValue
-        String checkMacValue = EcpayCheckMacValueUtil.generate(params, logisticsConfig.getHashKey(), logisticsConfig.getHashIv());
+        if (order.getPaymentMethod() == PaymentMethod.CASH_ON_DELIVERY) {
+            params.put("IsCollection", "Y");
+        } else {
+            params.put("IsCollection", "N");
+        }
+
+        params.put("SenderName", config.getSenderName());
+        params.put("SenderCellPhone", config.getSenderCellphone());
+
+        params.put("ServerReplyURL", config.getServerReplyUrl());
+        params.put("ClientReplyURL", config.getClientReplyUrl());
+
+        if ("HOME".equalsIgnoreCase(logisticsType)) {
+            params.put("SenderZipCode", config.getSenderZipCode());
+            params.put("SenderAddress", config.getSenderAddress());
+            // 宅配模式，不需在此階段提供收件人資訊，由綠界頁面讓使用者填寫
+        }
+
+        String checkMacValue = EcpayCheckMacValueUtil.generate(params, config.getHashKey(), config.getHashIv());
         params.put("CheckMacValue", checkMacValue);
 
         return params;
     }
 
     /**
-     * 【新增】步驟 B：呼叫 API 建立物流訂單
+     * 【修改】呼叫 API 建立物流訂單 (整合超商與宅配)
+     * @param order 訂單實體
+     * @param replyData 從綠界回調的資料 Map
+     * @return 綠界 API 的回應字串
      */
-    public String createLogisticsOrder(Order order, Map<String, String> storeReplyData) {
-        String createApiUrl = "https://logistics-stage.ecpay.com.tw/Express/Create";
-
-        EcpayProperties.Logistics logisticsConfig = ecpayProperties.getLogistics();
+    public String createLogisticsOrder(Order order, Map<String, String> replyData) {
+        String createApiUrl = ecpayProperties.getLogistics().getUrl() + "/Express/Create";
+        EcpayProperties.Logistics config = ecpayProperties.getLogistics();
         Map<String, String> params = new TreeMap<>();
-        params.put("MerchantID", logisticsConfig.getMerchantId());
-        params.put("MerchantTradeNo", order.getMerchantTradeNo());
+
+        // --- 基本資料 ---
+        params.put("MerchantID", config.getMerchantId());
+        params.put("MerchantTradeNo", replyData.get("MerchantTradeNo"));
         params.put("MerchantTradeDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")));
-        params.put("LogisticsType", "CVS");
-        params.put("LogisticsSubType", storeReplyData.get("LogisticsSubType"));
-        params.put("GoodsAmount", String.valueOf(order.getTotalAmount().longValue()));
         params.put("GoodsName", "網站商品一批");
+        params.put("GoodsAmount", String.valueOf(order.getTotalAmount().longValue()));
 
-        // 來自門市選擇回調的關鍵資訊
-        params.put("CVSStoreID", storeReplyData.get("CVSStoreID"));
-        params.put("CVSRecipientName", order.getCCustomerAddress().getName()); // 假設收件人名稱在訂單地址中
-        params.put("CVSRecipientCellPhone", order.getCCustomerAddress().getPhone()); // 假設收件人電話在訂單地址中
+        // ▼▼▼▼▼ 【請在此處補上這段 IsCollection 的判斷邏輯】 ▼▼▼▼▼
+        // 根據付款方式決定是否代收貨款
+        if (order.getPaymentMethod() == PaymentMethod.CASH_ON_DELIVERY) {
+            params.put("IsCollection", "Y");
+        } else {
+            params.put("IsCollection", "N");
+        }
+        // ▲▲▲▲▲ 【請在此處補上這段 IsCollection 的判斷邏輯】 ▲▲▲▲▲
 
-        // 寄件人資訊
-        params.put("SenderName", logisticsConfig.getSenderName());
-        params.put("SenderCellPhone", logisticsConfig.getSenderCellphone());
+        // --- 寄件人資料 ---
+        params.put("SenderName", config.getSenderName());
+        params.put("SenderCellPhone", config.getSenderCellphone());
 
-        // 回調網址
-        params.put("ServerReplyURL", logisticsConfig.getServerReplyUrl().replace("/store-reply", "/callback")); // 注意，這裡用的是接收「狀態」的 callback
+        // 【修正 2】改用更可靠的方式判斷物流類型，並填入對應參數
+        // 如果 replyData 裡面有 CVSStoreID，就代表是超商物流
+        if (replyData.containsKey("CVSStoreID")) {
+            params.put("LogisticsType", "CVS"); // 手動設定物流類型為 CVS
+            params.put("LogisticsSubType", replyData.get("LogisticsSubType"));
 
-        String checkMacValue = EcpayCheckMacValueUtil.generate(params, logisticsConfig.getHashKey(), logisticsConfig.getHashIv());
+            // 從我們自己的 Order 中獲取收件人資料
+            params.put("ReceiverName", order.getCCustomerAddress().getName());
+            params.put("ReceiverCellPhone", order.getCCustomerAddress().getPhone());
+
+            // 從綠界回傳的資料中獲取門市資訊
+            params.put("ReceiverStoreID", replyData.get("CVSStoreID"));
+
+        } else if (replyData.containsKey("ReceiverName")) { // 如果有 ReceiverName，代表是宅配
+            params.put("LogisticsType", "HOME"); // 手動設定物流類型為 HOME
+            params.put("LogisticsSubType", replyData.get("LogisticsSubType"));
+
+            // 宅配的收件資訊是從綠界頁面回傳的
+            params.put("ReceiverName", replyData.get("ReceiverName"));
+            params.put("ReceiverCellPhone", replyData.get("ReceiverCellPhone"));
+            params.put("ReceiverZipCode", replyData.get("ReceiverZipCode"));
+            params.put("ReceiverAddress", replyData.get("ReceiverAddress"));
+        } else {
+            throw new IllegalArgumentException("無法判斷物流類型，回傳資料缺少 CVSStoreID 或 ReceiverName");
+        }
+
+        // ServerReplyURL 要用接收「狀態」的 callback URL
+        String serverCallbackUrl = config.getServerReplyUrl().replace("/store-reply", "/callback");
+        params.put("ServerReplyURL", serverCallbackUrl);
+
+        // ▼▼▼▼▼ 【最終修正】在這裡加入 PlatformID 參數 ▼▼▼▼▼
+        params.put("PlatformID", "");
+        // ▲▲▲▲▲ 【最終修正】在這裡加入 PlatformID 參數 ▲▲▲▲▲
+
+        // (除錯用的 System.out.println 您可以保留或刪除)
+        System.out.println("=============================================");
+        System.out.println("準備發送到綠界的物流訂單參數 (最終版)：");
+        params.forEach((key, value) -> System.out.println(key + " = " + value));
+        System.out.println("=============================================");
+
+        // --- 計算 CheckMacValue ---
+        String checkMacValue = EcpayCheckMacValueUtil.generate(params, config.getHashKey(), config.getHashIv());
         params.put("CheckMacValue", checkMacValue);
 
-        // 發送 Server-to-Server 請求
+        // --- 發送 Server-to-Server 請求 ---
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        // ====================== 【以下為修正的程式碼】 ======================
-// 1. 先建立一個空的 LinkedMultiValueMap
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-
-// 2. 使用 .setAll() 方法將您原本的 params Map 轉換並填入
         formData.setAll(params);
 
-// 3. 使用新的 formData 物件來建立 HttpEntity
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(formData, headers);
-// ===============================================================
 
         ResponseEntity<String> response = restTemplate.postForEntity(createApiUrl, request, String.class);
-        return response.getBody(); // 回傳綠界的結果，例如 "1|OK"
+        return response.getBody();
     }
 }

@@ -79,18 +79,18 @@ public class PurchaseOrderDetail {
         return product != null ? product.getProductId() : null;
     }
 
-    public void setProductId(Long productId) {
-        // This method intentionally left empty to maintain compatibility
-        // The product relationship should be set directly instead
-    }
+//    public void setProductId(Long productId) {
+//        // This method intentionally left empty to maintain compatibility
+//        // The product relationship should be set directly instead
+//    }
 
     // Maintain backward compatibility with code using warehouseId
     public Long getWarehouseId() {
         return warehouse != null ? warehouse.getWarehouseId() : null;
     }
 
-    public void setWarehouseId(Long warehouseId) {
-        // This method intentionally left empty to maintain compatibility
-        // The warehouse relationship should be set directly instead
-    }
+//    public void setWarehouseId(Long warehouseId) {
+//        // This method intentionally left empty to maintain compatibility
+//        // The warehouse relationship should be set directly instead
+//    }
 }

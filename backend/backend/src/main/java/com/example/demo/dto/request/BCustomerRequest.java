@@ -31,6 +31,7 @@ public class BCustomerRequest {
 
     private String customerAddress;
     private String customerTel;
+    private String tinNumber; //TODO(josh)
 
     @Email(message = "客戶電子郵件格式不正確")
     private String customerEmail;

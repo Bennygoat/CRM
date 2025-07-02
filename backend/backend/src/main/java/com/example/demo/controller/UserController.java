@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.request.UpdateCCustomerProfileRequest;
 import com.example.demo.dto.request.UpdateUserProfileRequest;
+import com.example.demo.dto.request.UserQueryRequest;
 import com.example.demo.dto.request.UserRegisterRequest;
 import com.example.demo.dto.response.CCustomerProfileResponse;
 import com.example.demo.dto.response.UserProfileResponse;
@@ -13,6 +14,7 @@ import com.example.demo.security.CheckJwt;
 import com.example.demo.service.CCustomerService;
 import com.example.demo.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -76,6 +78,20 @@ public class UserController {
         return ResponseEntity.ok(updatedProfile);
     }
 
+    // 忘記密碼
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestParam String email) {
+        String token = userService.generateResetToken(email);
+        return ResponseEntity.ok("Token: " + token); // 可改成寄信或顯示前端畫面
+    }
+
+    @PatchMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestParam String token,
+                                                @RequestParam String newPassword) {
+        userService.resetPassword(token, newPassword);
+        return ResponseEntity.ok("密碼已成功重設");
+    }
+
     //  系統管理員查閱單一使用者資料（by account）
     @CheckJwt
     @CheckAuthority(AuthorityCode.USER_READ)
@@ -83,6 +99,14 @@ public class UserController {
     public ResponseEntity<UserProfileResponse> getUserByAccount(@PathVariable String account) {
         UserProfileResponse profile = userService.getUserProfileByAccount(account);
         return ResponseEntity.ok(profile);
+    }
+
+    // 系統管理員查閱多筆使用者資料
+    @CheckJwt
+    @CheckAuthority(AuthorityCode.USER_READ)
+    @PostMapping("/search")
+    public ResponseEntity<Page<UserProfileResponse>> searchUsers(@RequestBody UserQueryRequest req) {
+        return ResponseEntity.ok(userService.queryUsers(req));
     }
 
     //  系統管理員編輯使用者資料（含權限、激活時間、密碼）

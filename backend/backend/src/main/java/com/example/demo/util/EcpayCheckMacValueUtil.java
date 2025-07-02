@@ -10,13 +10,8 @@ public class EcpayCheckMacValueUtil {
 
     /**
      * 產生 ECPay CheckMacValue
-     * @param params 參數 Map
-     * @param hashKey ECPay HashKey
-     * @param hashIv ECPay HashIV
-     * @return CheckMacValue
      */
     public static String generate(Map<String, String> params, String hashKey, String hashIv) {
-        // 使用 TreeMap 來確保參數按字母順序排序
         Map<String, String> sortedParams = new TreeMap<>(params);
 
         StringBuilder sb = new StringBuilder();
@@ -31,20 +26,20 @@ public class EcpayCheckMacValueUtil {
     }
 
     /**
-     * ECPay 特定的 URL 編碼，對應 PHP 的 UrlService::ecpayUrlEncode
-     * @param source 來源字串
-     * @return 編碼後的字串
+     * ECPay 特定的 URL 編碼
      */
     private static String ecpayUrlEncode(String source) {
         try {
             String encoded = URLEncoder.encode(source, StandardCharsets.UTF_8.toString());
-            // .net URLEncode 的特殊字元轉換
+
+            // 【修正】將 .replace() 中的比對字串從「小寫」的 %xx 改為「大寫」的 %XX
+            // 以符合 Java URLEncoder 的輸出
             return encoded
-                    .replace("%2d", "-")
-                    .replace("%5f", "_")
-                    .replace("%2e", ".")
+                    .replace("%2D", "-")
+                    .replace("%5F", "_")
+                    .replace("%2E", ".")
                     .replace("%21", "!")
-                    .replace("%2a", "*")
+                    .replace("%2A", "*")
                     .replace("%28", "(")
                     .replace("%29", ")");
         } catch (Exception e) {
@@ -54,9 +49,6 @@ public class EcpayCheckMacValueUtil {
 
     /**
      * 進行 SHA-256 雜湊
-     * @param data 要雜湊的資料
-     * @param algorithm 演算法 (SHA-256)
-     * @return 雜湊後的十六進位字串
      */
     private static String hash(String data, String algorithm) {
         try {

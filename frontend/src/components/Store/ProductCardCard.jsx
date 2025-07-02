@@ -19,7 +19,7 @@ function ProductCard({ title, price, imageSrc, description }) {
         </div>
         <div className="mt-3 flex items-center justify-between">
           <span className="text-gray font-bold">{price}</span>
-          <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm font-semibold">
+          <button className="bg-logo-lightBlue text-white px-3 py-1 rounded text-sm font-semibold">
             +
           </button>
         </div>

@@ -3,6 +3,11 @@ package com.example.demo.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -13,6 +18,7 @@ import java.util.List;
 @Table(name = "products")
 @Getter
 @Setter
+@EntityListeners(AuditingEntityListener.class)
 public class Product {
 
     @Id
@@ -65,6 +71,7 @@ public class Product {
     private Boolean isActive = true;
 
 
+    @CreatedBy
     @Column(name = "created_by", nullable = false, updatable = false)
     private Long createdBy;
 
@@ -72,6 +79,7 @@ public class Product {
     @JoinColumn(name = "created_by", insertable = false, updatable = false)
     private User createdByUser;
 
+    @LastModifiedBy
     @Column(name = "updated_by", nullable = false)
     private Long updatedBy;
 
@@ -79,9 +87,11 @@ public class Product {
     @JoinColumn(name = "updated_by", insertable = false, updatable = false)
     private User updatedByUser;
 
+    @CreatedDate
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 

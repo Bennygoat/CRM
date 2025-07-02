@@ -58,14 +58,14 @@ public class ContactServiceImpl implements ContactService {
      * @throws EntityNotFoundException 如果關聯的客戶不存在。
      */
     @Override
-    @Transactional // 寫入操作需確保事務完整性
+    @Transactional
     public ContactDto create(ContactRequest request) {
         BCustomer BCustomer = BCustomerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new EntityNotFoundException("找不到客戶，ID: " + request.getCustomerId()));
 
         Contact contact = new Contact();
-        mapRequestToEntity(request, contact); // 將請求 DTO 中的基礎屬性映射到實體
-        contact.setBCustomer(BCustomer); // 設定聯絡人所屬的客戶實體
+        mapRequestToEntity(request, contact);
+        contact.setBCustomer(BCustomer);
 
         Contact savedContact = contactRepository.save(contact);
         return convertToDto(savedContact);
@@ -86,7 +86,7 @@ public class ContactServiceImpl implements ContactService {
 
         BCustomer BCustomer = BCustomerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new EntityNotFoundException("找不到客戶，ID: " + request.getCustomerId()));
-        contact.setBCustomer(BCustomer); // 設定聯絡人所屬的客戶實體
+        contact.setBCustomer(BCustomer);
 
         mapRequestToEntity(request, contact);
 

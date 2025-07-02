@@ -35,8 +35,10 @@ function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {/* 聯絡我們 */}
           <div className="flex flex-col text-left">
-            <p className="font-semibold">哈根良野有限公司</p>
+            <p className="font-semibold">聯絡我們</p>
+           
             <div className='text-sm space-y-1'>
+              <div className="font-semibold">哈根良野有限公司</div>
               <div>統編 55646980</div>
               <div>電話 02-23456617</div>
               <div>cs@vegsavage.com</div>
@@ -50,8 +52,9 @@ function Footer() {
 
           {/* 公司・店面位置 */}
           <div className="flex flex-col text-left">
-            <p className="font-semibold">良野豆乳冰品</p>
+            <p className="font-semibold">店面位置</p>
             <div className='text-sm space-y-1'>
+              <div className="font-semibold">良野豆乳冰品</div>
               <div>(哈根良野有限公司)</div>
               <div>彰化縣北斗鎮大新里斗中路103號</div>
               <div>週一至週五 09:00-16:30</div>

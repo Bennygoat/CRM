@@ -90,7 +90,7 @@ const UsersManage = () => {
       valueType: "option",
       key: "option",
       render: (_, record) => [
-        <a key="edit" onClick={() => navigate(`/admin/users/${record.id}`)}>
+        <a key="edit" onClick={() => navigate(`/users/authority`)}>
           編輯
         </a>,
         <TableDropdown
@@ -112,11 +112,7 @@ const UsersManage = () => {
         dataSource={data}
         loading={loading}
         rowKey="id"
-        search={{
-          labelWidth: "auto",
-          searchText: "搜尋",
-          resetText: "清除",
-        }}
+        search={false}
         pagination={false}
         dateFormatter="string"
         headerTitle="使用者帳號管理"

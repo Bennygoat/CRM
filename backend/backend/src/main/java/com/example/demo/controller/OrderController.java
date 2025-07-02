@@ -4,7 +4,8 @@ import com.example.demo.dto.request.CreateOrderRequestDto;
 import com.example.demo.dto.request.UpdateStatusRequestDto;
 import com.example.demo.dto.response.OrderDto;
 import com.example.demo.enums.OrderStatus;
-import com.example.demo.security.CheckJwt; // 引入 CheckJwt
+import com.example.demo.security.CheckJwt;
+import com.example.demo.security.JwtUserPayload;
 import com.example.demo.service.OrderService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springdoc.core.annotations.ParameterObject;
@@ -28,21 +29,24 @@ public class OrderController {
     private OrderService orderService;
 
     /**
+     * 從 HttpServletRequest 中取得 customerId 的輔助方法。
+     */
+    private Long getCustomerIdFromRequest(HttpServletRequest request) {
+        JwtUserPayload userPayload = (JwtUserPayload) request.getAttribute("userPayload");
+        if (userPayload == null) {
+            throw new IllegalStateException("無法從 JWT payload 中取得使用者資訊");
+        }
+        return userPayload.getId();
+    }
+
+    /**
      * 結帳 - 從購物車建立新訂單
      */
-//    @PostMapping
-//    public ResponseEntity<OrderDto> createOrder(@AuthenticationPrincipal UserPrincipal currentUser,
-//                                                @RequestBody CreateOrderRequestDto requestDto) {
-//        OrderDto newOrder = orderService.createOrderFromCart(currentUser.getId(), requestDto);
-//        return ResponseEntity.status(HttpStatus.CREATED).body(newOrder);
-//    }
-    // 修改前：@PostMapping("/{userId}")
-    // 修改後：
     @PostMapping("/create")
-    @CheckJwt // ★★★【修改重點】★★★
+    @CheckJwt
     public ResponseEntity<OrderDto> createOrder(HttpServletRequest request,
                                                 @RequestBody CreateOrderRequestDto requestDto) {
-        Long customerId = (Long) request.getAttribute("customerId");
+        Long customerId = getCustomerIdFromRequest(request);
         OrderDto newOrder = orderService.createOrderFromCart(customerId, requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(newOrder);
     }
@@ -50,22 +54,15 @@ public class OrderController {
     /**
      * 查詢自己的歷史訂單
      */
-//    @GetMapping("/my-orders")
-//    public ResponseEntity<List<OrderDto>> getMyOrders(@AuthenticationPrincipal UserPrincipal currentUser) {
-//        List<OrderDto> orders = orderService.getOrdersByUserId(currentUser.getId());
-//        return ResponseEntity.ok(orders);
-//    }
-    // 修改前：@GetMapping("/my-orders/{userId}")
-    // 修改後：
     @GetMapping("/my-orders")
-    @CheckJwt // ★★★【修改重點】★★★
+    @CheckJwt
     public ResponseEntity<List<OrderDto>> getMyOrders(HttpServletRequest request) {
-        Long customerId = (Long) request.getAttribute("customerId");
+        Long customerId = getCustomerIdFromRequest(request);
         List<OrderDto> orders = orderService.getOrdersBycustomerId(customerId);
         return ResponseEntity.ok(orders);
     }
 
-    // --- 以下為後台管理用 API (假設有 ADMIN 權限，暫時不加 @CheckJwt 保護) ---
+    // --- 以下為後台管理用 API (暫時不加 @CheckJwt 保護) ---
 
     @GetMapping("/all")
     public ResponseEntity<Page<OrderDto>> getAllOrders(
@@ -75,7 +72,6 @@ public class OrderController {
         return ResponseEntity.ok(orderPage);
     }
 
-    // ... 其他後台 API 維持不變 ...
     @GetMapping("/status")
     public ResponseEntity<Page<OrderDto>> getOrdersByStatus(
             @RequestParam OrderStatus status,

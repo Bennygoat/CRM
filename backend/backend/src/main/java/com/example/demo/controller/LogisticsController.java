@@ -22,32 +22,26 @@ public class LogisticsController {
     private OrderService orderService;
     // 移除 OrderRepository 的注入，這個職責應該在 Service 層
 
-    /**
-     * 【修改】此端點用來產生一個表單，並自動將使用者導向綠界物流選擇頁面
-     * 現在由 Service 直接處理所有邏輯並返回參數
-     */
     @GetMapping("/select/{orderId}")
-    public String selectLogistics(@PathVariable Long orderId, Model model) {
-        // 直接呼叫 Service 層，傳入 ID 和 model
-        ecpayService.prepareLogisticsRedirect(orderId, model);
-
-        // 回傳模板名稱，Thymeleaf 會渲染此模板
+    public String selectLogistics(@PathVariable Long orderId,
+                                  @RequestParam("type") String type,
+                                  @RequestParam("subType") String subType, // 注意：宅配也需要 subType, e.g., TCAT, ECAN
+                                  Model model) {
+        ecpayService.prepareLogisticsRedirect(orderId, type, subType, model);
         return "ecpay-logistics-redirect";
     }
 
-    /**
-     * 【新增】接收使用者在綠界地圖選擇門市後的回調
-     */
     @PostMapping("/store-reply")
     @ResponseBody
     public String handleStoreSelectionReply(@RequestParam Map<String, String> replyData) {
-        System.out.println("收到門市選擇結果: " + replyData);
+        System.out.println("收到物流選擇結果: " + replyData);
         try {
-            orderService.processStoreSelection(replyData);
+            orderService.processLogisticsSelection(replyData);
             return "1|OK";
         } catch (Exception e) {
-            System.err.println("處理門市選擇結果失敗: " + e.getMessage());
-            return "0|Error";
+            System.err.println("處理物流選擇結果失敗: " + e.getMessage());
+            e.printStackTrace();
+            return "0|Error: " + e.getMessage();
         }
     }
 
@@ -68,5 +62,12 @@ public class LogisticsController {
             System.err.println("處理綠界物流回調失敗: " + e.getMessage());
             return "1|OK";
         }
+    }
+
+
+    // 在 LogisticsController.java 的 class 內部新增此方法
+    @GetMapping("/test-page")
+    public String showTestPage() {
+        return "test-logistics.html";
     }
 }

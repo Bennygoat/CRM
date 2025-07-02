@@ -23,6 +23,7 @@ function News() {
           date={item.date}
           title={item.title}
           id={item.id}
+          direction={index % 2 === 0 ? 'left' : 'right'} // 🔁 左右交錯
         />
       ))}
     </div>

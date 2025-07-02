@@ -38,7 +38,7 @@ function ProductList({ products }) {
   console.log("實際資料列表：", products);
 
   return (
-    <section className="py-10 px-4 md:px-16 text-left relative">
+    <section className="py-10 px-4 md:px-28 text-left relative">
       {/* 標題區 */}
       <div className="flex flex-col md:flex-row md:items-end space-y-1 md:space-y-0 md:space-x-1 mb-6">
         <span className="text-2xl font-semibold text-gray-800">輕包裝水果冰棒。</span>

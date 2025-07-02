@@ -31,6 +31,7 @@ import CRMOpportunities from "./backpages/crm/CRMOpportunities.jsx";
 import CRMOpportunityForm from "./backpages/crm/CRMOpportunityForm.jsx";
 import CRMCustomerForm from "./backpages/crm/CRMCustomerForm.jsx";
 import CRMCalendar from "./backpages/crm/CRMCalendar.jsx";
+import CRMCompany from "./backpages/crm/CRMCompany.jsx";
 //ERP相關頁面
 import ERPOrders from "./backpages/erp/ERPOrders.jsx";
 import ERPProducts from "./backpages/erp/ERPProducts.jsx";
@@ -38,16 +39,16 @@ import ERPStockLevels from "./backpages/erp/ERPStockLevels.jsx";
 import ERPPurchaseOrders from "./backpages/erp/ERPPurchaseOrders.jsx";
 import ERPCustomers from "./backpages/erp/ERPCustomers.jsx";
 import ERPDashboard from "./backpages/erp/ERPDashboard.jsx";
-import ERPReturns from "./backpages/erp/ERPReturns.jsx";
-import Finance from "./backpages/erp/Finance.jsx";
-import Inventory from "./backpages/erp/Inventory.jsx";
-import Sales from "./backpages/erp/Sales.jsx";
+import ERPOrderForm from "./backpages/erp/ERPOrderForm.jsx";
+import ERPNewOrderForm from "./backpages/erp/ERPNewOrderForm.jsx";
 // 使用者角色和權限
 import UsersManage from "./backpages/users/usersManage.jsx";
 import UsersLogs from "./backpages/users/usersLogs.jsx";
+import UsersAuthority from "./backpages/users/usersAuthority.jsx";
+import UsersMessage from "./backpages/users/usersMessage.jsx";
 
 const user = useBackUserStore.getState().backUser;
-const role = user?.role || "editor";
+const role = user?.role || "admin";
 const getFilteredAppList = (role) =>
   appListConfig.filter((item) => item.roles.includes(role));
 const filteredAppList = getFilteredAppList(role);
@@ -65,7 +66,7 @@ const router = createBrowserRouter([
       { path: "login", element: <Login /> },
       { path: "signFlow", element: <SignFlow /> },
       { path: "signsuccess", element: <SignSuccess /> },
-      { path: "product", element: <Product /> },
+      { path: "product/:id", element: <Product /> },
       { path: "cart", element: <Cart /> },
       { path: "funnyerror", element: <FunnyError /> },
       { path: "user", element: <User /> },
@@ -118,6 +119,10 @@ const router = createBrowserRouter([
         path: "customer/:id",
         element: <CRMCustomerForm />,
       },
+      {
+        path: "company",
+        element: <CRMCompany />,
+      },
     ],
   },
   {
@@ -150,20 +155,12 @@ const router = createBrowserRouter([
         element: <ERPCustomers />,
       },
       {
-        path: "sales/returns",
-        element: <ERPReturns />,
+        path: "sales/orders/:id",
+        element: <ERPOrderForm />,
       },
       {
-        path: "finance",
-        element: <Finance />,
-      },
-      {
-        path: "inventory",
-        element: <Inventory />,
-      },
-      {
-        path: "sales",
-        element: <Sales />,
+        path: "sales/orders/new",
+        element: <ERPNewOrderForm />,
       },
     ],
   },
@@ -183,6 +180,14 @@ const router = createBrowserRouter([
         {
           path: "logs",
           element: <UsersLogs />,
+        },
+        {
+          path: "authority",
+          element: <UsersAuthority />,
+        },
+        {
+          path: "message",
+          element: <UsersMessage />,
         },
       ],
   },

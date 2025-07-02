@@ -28,12 +28,10 @@ function Banner() {
       >
         {banners.map((img, index) => (
           <SwiperSlide key={index}>
-            <Link to="/Cart">
               <div
                 className="w-full h-full bg-cover bg-center"
                 style={{ backgroundImage: `url(${img})` }}
               />
-            </Link>
           </SwiperSlide>
         ))}
       </Swiper>

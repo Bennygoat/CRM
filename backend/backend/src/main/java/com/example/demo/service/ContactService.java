@@ -1,10 +1,10 @@
 package com.example.demo.service;
 
-import com.example.demo.dto.request.ContactRequest; // 引入請求 DTO
-import com.example.demo.dto.response.ContactDto;   // 引入回應 DTO
+import com.example.demo.dto.request.ContactRequest;
+import com.example.demo.dto.response.ContactDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import jakarta.persistence.EntityNotFoundException; // 引入 JPA 資源未找到異常
+import jakarta.persistence.EntityNotFoundException;
 
 public interface ContactService {
 

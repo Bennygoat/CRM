@@ -66,6 +66,10 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderDetail> orderDetails = new ArrayList<>();
 
+    // 【重要】新增與 CustomerCoupon 的反向關聯
+    @OneToOne(mappedBy = "order", fetch = FetchType.LAZY)
+    private CustomerCoupon usedCoupon; // 反向關聯，用於查詢此訂單用了哪張券
+
     //-------------雙向關聯輔助方法
     public void addOrderDetail(OrderDetail orderDetail) {
         this.orderDetails.add(orderDetail);

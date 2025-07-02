@@ -35,6 +35,7 @@ public class Message {
     private CCustomer cCustomer;
 
     // 一對多關聯回覆
+    @Builder.Default
     @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MessageReply> replies = new ArrayList<>();
 

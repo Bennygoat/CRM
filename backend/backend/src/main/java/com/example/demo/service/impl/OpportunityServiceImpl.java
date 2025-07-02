@@ -1,18 +1,17 @@
 package com.example.demo.service.impl;
 
+import com.example.demo.dto.request.OpportunityPriorityRequest;
 import com.example.demo.dto.request.OpportunityRequest;
 import com.example.demo.dto.response.OpportunityDto;
+import com.example.demo.dto.response.SalesFunnelDto;
 import com.example.demo.entity.BCustomer;
 import com.example.demo.entity.Contact;
 import com.example.demo.entity.Opportunity;
-import com.example.demo.entity.Tag;
+import com.example.demo.entity.OpportunityTag;
 import com.example.demo.enums.OpportunityStage;
 import com.example.demo.enums.OpportunityStatus;
 import com.example.demo.mapper.OpportunityMapper;
-import com.example.demo.repository.BCustomerRepository;
-import com.example.demo.repository.ContactRepository;
-import com.example.demo.repository.OpportunityRepository;
-import com.example.demo.repository.TagRepository;
+import com.example.demo.repository.*;
 import com.example.demo.service.OpportunityService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Predicate;
@@ -24,6 +23,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -39,18 +39,18 @@ public class OpportunityServiceImpl implements OpportunityService {
     private final BCustomerRepository bCustomerRepository;
     private final ContactRepository contactRepository;
     private final OpportunityMapper opportunityMapper;
-    private final TagRepository tagRepository;
+    private final OpportunityTagRepository opportunityTagRepository;
 
     public OpportunityServiceImpl(OpportunityRepository opportunityRepository,
                                   BCustomerRepository bCustomerRepository,
                                   ContactRepository contactRepository,
                                   OpportunityMapper opportunityMapper,
-                                  TagRepository tagRepository) {
+                                  OpportunityTagRepository opportunityTagRepository) {
         this.opportunityRepository = opportunityRepository;
         this.bCustomerRepository = bCustomerRepository;
         this.contactRepository = contactRepository;
         this.opportunityMapper = opportunityMapper;
-        this.tagRepository = tagRepository;
+        this.opportunityTagRepository = opportunityTagRepository;
     }
 
     /**
@@ -90,33 +90,37 @@ public class OpportunityServiceImpl implements OpportunityService {
     @Override
     @Transactional
     public OpportunityDto create(OpportunityRequest request) {
-        BCustomer bCustomer = bCustomerRepository.findById(request.getCustomerId())
-                .orElseThrow(() -> new EntityNotFoundException("找不到 ID 為 " + request.getCustomerId() + " 的客戶"));
-
-        Contact contact = null;
-        if (request.getContactId() != null) {
-            contact = contactRepository.findById(request.getContactId())
-                    .orElseThrow(() -> new EntityNotFoundException("找不到 ID 為 " + request.getContactId() + " 的聯絡人"));
-        }
-
         Opportunity opportunity = opportunityMapper.toEntity(request);
 
-        opportunity.setBCustomer(bCustomer);
-        opportunity.setContact(contact);
-        opportunity.setCreatedAt(LocalDateTime.now());
-        opportunity.setUpdatedAt(LocalDateTime.now());
-        opportunity.setNumberOfRatings(0);
-        opportunity.setTotalRatingSum(0L);
+        BCustomer customer = bCustomerRepository.findById(request.getCustomerId())
+                .orElseThrow(() -> new EntityNotFoundException("找不到客戶 ID: " + request.getCustomerId()));
+        opportunity.setBCustomer(customer);
 
+        if (request.getContactId() != null) {
+            Contact contact = contactRepository.findById(request.getContactId())
+                    .orElseThrow(() -> new EntityNotFoundException("找不到聯絡人 ID: " + request.getContactId()));
+            opportunity.setContact(contact);
+        }
         if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
-            List<Tag> tags = tagRepository.findAllById(request.getTagIds());
+            List<OpportunityTag> tags = opportunityTagRepository.findAllById(request.getTagIds());
             if (tags.size() != request.getTagIds().size()) {
-                throw new EntityNotFoundException("一個或多個標籤ID不存在。");
+                throw new EntityNotFoundException("一個或多個用於創建的商機標籤ID不存在。");
             }
             opportunity.setTags(new HashSet<>(tags));
         }
 
+        LocalDateTime creationTime;
+        if (request.getCreateDate() != null) {
+            creationTime = request.getCreateDate();
+        } else {
+            creationTime = LocalDateTime.now();
+        }
+
+        opportunity.setCreatedAt(creationTime);
+        opportunity.setUpdatedAt(creationTime);
+
         Opportunity savedOpportunity = opportunityRepository.save(opportunity);
+
         return opportunityMapper.toResponse(savedOpportunity, null);
     }
 
@@ -154,9 +158,9 @@ public class OpportunityServiceImpl implements OpportunityService {
         }
 
         if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
-            List<Tag> tags = tagRepository.findAllById(request.getTagIds());
+            List<OpportunityTag> tags = opportunityTagRepository.findAllById(request.getTagIds());
             if (tags.size() != request.getTagIds().size()) {
-                throw new EntityNotFoundException("一個或多個用於更新的標籤ID不存在。");
+                throw new EntityNotFoundException("一個或多個用於更新的商機標籤ID不存在。");
             }
             existingOpportunity.setTags(new HashSet<>(tags));
         } else {
@@ -205,9 +209,7 @@ public class OpportunityServiceImpl implements OpportunityService {
                 .orElseThrow(() -> new EntityNotFoundException("找不到 ID 為 " + opportunityId + " 的商機進行評分"));
 
         // 3. 更新評分相關字段
-        // 注意：這裡假設一個用戶可以重複評分，每次評分都會計入總和。
-        // 如果您需要實現「一個用戶只能評分一次」的功能，則需要更複雜的邏輯，
-        // 例如額外的評分記錄表，或者在 Opportunity 實體中儲存 Map<Long, Integer> 來記錄每個用戶的評分。
+        // 一個用戶可以重複評分，每次評分都會計入總和。
         opportunity.setTotalRatingSum(opportunity.getTotalRatingSum() + ratingScore);
         opportunity.setNumberOfRatings(opportunity.getNumberOfRatings() + 1);
 
@@ -218,8 +220,63 @@ public class OpportunityServiceImpl implements OpportunityService {
         Opportunity updatedOpportunity = opportunityRepository.save(opportunity);
 
         // 5. 將更新後的實體轉換為 DTO。
-        // 同上，如果 toResponse 需要 currentUserId 但這裡沒有，請調整
         return opportunityMapper.toResponse(updatedOpportunity, null);
+    }
+
+
+    @Override
+    @Transactional
+    public OpportunityDto setPriority(Long opportunityId, OpportunityPriorityRequest request) {
+        Opportunity opportunity = opportunityRepository.findById(opportunityId)
+                .orElseThrow(() -> new EntityNotFoundException("找不到 ID 為 " + opportunityId + " 的商機"));
+
+        opportunity.setPriority(request.getPriority());
+
+        Opportunity updatedOpportunity = opportunityRepository.save(opportunity);
+
+        return opportunityMapper.toResponse(updatedOpportunity, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SalesFunnelDto> getSalesFunnelData() {
+        // 查詢所有「未結案(失敗)」的商機
+        // 這會包含所有 OPEN 和 WON 的商機
+        List<Opportunity> activeOpportunities = opportunityRepository.findByStatusNot(OpportunityStatus.LOST);
+
+        // 按階段分組
+        Map<OpportunityStage, List<Opportunity>> opportunitiesByStage = activeOpportunities.stream()
+                .collect(Collectors.groupingBy(Opportunity::getStage));
+
+        List<SalesFunnelDto> funnelData = new ArrayList<>();
+
+        // 遍歷所有可能的階段
+        for (OpportunityStage stage : OpportunityStage.values()) {
+            if (stage == OpportunityStage.CLOSED_LOST) {
+                continue;
+            }
+
+            SalesFunnelDto stageDto = new SalesFunnelDto();
+            stageDto.setStage(stage);
+            stageDto.setStageDisplayName(stage.name());
+
+            List<Opportunity> opportunitiesInStage = opportunitiesByStage.getOrDefault(stage, Collections.emptyList());
+            List<OpportunityDto> opportunityDtos = opportunitiesInStage.stream()
+                    .map(opportunity -> opportunityMapper.toResponse(opportunity, null))
+                    .collect(Collectors.toList());
+
+            stageDto.setOpportunities(opportunityDtos);
+            stageDto.setTotalCount((long) opportunitiesInStage.size());
+            stageDto.setTotalExpectedValue(
+                    opportunitiesInStage.stream()
+                            .map(Opportunity::getExpectedValue)
+                            .filter(Objects::nonNull)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add)
+            );
+
+            funnelData.add(stageDto);
+        }
+        return funnelData;
     }
 
     /**
@@ -294,4 +351,5 @@ public class OpportunityServiceImpl implements OpportunityService {
         return opportunityRepository.findByStage(stage, pageable)
                 .map(opportunity -> opportunityMapper.toResponse(opportunity, null));
     }
+
 }

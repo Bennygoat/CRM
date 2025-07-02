@@ -2,9 +2,7 @@ package com.example.demo.entity;
 
 import com.example.demo.enums.CustomerType;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
@@ -23,25 +21,34 @@ import java.time.LocalDateTime;
 @SuperBuilder
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
+@ToString(of = {"customerId", "customerName"}) //TODO(josh): Added for BCustomer
+@EqualsAndHashCode(onlyExplicitlyIncluded = true) //TODO(josh): Added for BCustomer
 public abstract class CustomerBase {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include //TODO(josh): Added for BCustomer
     @Column(name = "customer_id")
     private Long customerId;
 
-    @Column(name = "customer_code", unique = true, nullable = false, length = 50)
+    @Column(name = "customer_code", unique = true, nullable = true, length = 50)
     private String customerCode;
 
     @Column(name = "name", nullable = false)
-    private String name;
+    private String customerName;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "customer_type", nullable = false, length = 10, insertable = false, updatable = false)
     private CustomerType customerType;
 
     @Column(name = "is_active", nullable = false)
+    @Builder.Default
     private boolean isActive = true;
+
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private Boolean isDeleted = false;
+
 
     @Column(name = "address", length = 500)
     private String address;
@@ -51,6 +58,9 @@ public abstract class CustomerBase {
 
     @Column(name = "customertel")
     private String tel;
+
+    @Column(name="spending")
+    private Long spending;
 
     @CreatedBy
     @Column(name = "created_by", nullable = false)
@@ -67,6 +77,10 @@ public abstract class CustomerBase {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    public boolean isAvailable() {
+        return this.isActive && !this.isDeleted;
+    }
 
 
 

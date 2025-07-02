@@ -81,5 +81,4 @@ public interface BCustomerService {
      * @return 符合條件的客戶 DTO 分頁列表。
      */
     Page<BCustomerDto> findCustomersByCustomerLevel(BCustomerLevel BCustomerLevel, Pageable pageable);
-
 }

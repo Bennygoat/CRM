@@ -10,13 +10,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.example.demo.dto.ProductCreateDTO;
-import com.example.demo.dto.ProductResponseDTO;
-import com.example.demo.dto.ProductUpdateDTO;
+import com.example.demo.dto.erp.ProductCreateDTO;
+import com.example.demo.dto.erp.ProductResponseDTO;
+import com.example.demo.dto.erp.ProductUpdateDTO;
 import com.example.demo.entity.ProductCategory;
 import com.example.demo.entity.Unit;
 import com.example.demo.repository.ProductCategoryRepository;
 import com.example.demo.repository.UnitRepository;
+import com.example.demo.service.erp.ProductService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -151,7 +152,7 @@ class ProductServiceTest {
         updateDTO.setCategoryId(1L);
         updateDTO.setUnitId(1L);
         updateDTO.setTaxType("TAXABLE");
-        updateDTO.setIsActive(true);
+        updateDTO.setIsSalable(true);
 
         Unit mockUnit = new Unit();
         mockUnit.setUnitId(1L);
@@ -191,7 +192,7 @@ class ProductServiceTest {
         updateDTO.setCategoryId(1L);
         updateDTO.setUnitId(1L);
         updateDTO.setTaxType("TAXABLE");
-        updateDTO.setIsActive(true);
+        updateDTO.setIsSalable(true);
 
 
         // 設定 Mockito：當 findById 被呼叫時，回傳一個空的 Optional，表示找不到

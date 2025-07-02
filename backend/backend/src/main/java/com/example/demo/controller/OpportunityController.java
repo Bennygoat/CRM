@@ -1,7 +1,9 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.request.OpportunityPriorityRequest;
 import com.example.demo.dto.request.OpportunityRequest;
 import com.example.demo.dto.response.OpportunityDto;
+import com.example.demo.dto.response.SalesFunnelDto;
 import com.example.demo.enums.OpportunityStage;
 import com.example.demo.enums.OpportunityStatus;
 import com.example.demo.service.OpportunityService;
@@ -13,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/opportunities")
@@ -100,7 +103,7 @@ public class OpportunityController {
      */
     @GetMapping("/search")
     public ResponseEntity<Page<OpportunityDto>> searchOpportunities(
-            @RequestParam(required = false) String name, // @RequestParam 綁定 URL 查詢參數
+            @RequestParam(required = false) String name,
             @RequestParam(required = false) OpportunityStatus status,
             @RequestParam(required = false) OpportunityStage stage,
             @RequestParam(required = false) Long customerId,
@@ -123,22 +126,36 @@ public class OpportunityController {
     @PostMapping("/{id}/rate")
     public ResponseEntity<OpportunityDto> rateOpportunity(
             @PathVariable Long id,
-            @RequestParam int ratingScore) { // 評分分數作為查詢參數或請求體中的字段
-        // **** 這裡獲取當前用戶ID的邏輯至關重要且必須安全 ****
-        // 這是 Spring Security 的標準做法：
-        // Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        // Long currentUserId = null;
-        // if (authentication != null && authentication.getPrincipal() instanceof YourCustomUserDetails) {
-        //     currentUserId = ((YourCustomUserDetails) authentication.getPrincipal()).getId();
-        // }
-        // if (currentUserId == null) {
-        //     // 如果無法獲取用戶 ID，可能是未登錄或安全配置問題，返回 401 Unauthorized
-        //     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        // }
+            @RequestParam int ratingScore) {
 
-        Long currentUserId = 1L; // <-- 臨時佔位符！在實際應用中，請替換為從 Spring Security 安全地獲取用戶ID
+        Long currentUserId = 1L;
 
         OpportunityDto updatedOpportunity = opportunityService.rateOpportunity(id, currentUserId, ratingScore);
         return ResponseEntity.ok(updatedOpportunity);
+    }
+
+    /**
+     * PUT /api/opportunities/{id}/priority : 設定商機的優先級 (星級)
+     * @param id 商機 ID
+     * @param request 包含優先級的請求 Body
+     * @return 更新後的商機 DTO
+     */
+    @PutMapping("/{id}/priority")
+    public ResponseEntity<OpportunityDto> setOpportunityPriority(
+            @PathVariable Long id,
+            @Valid @RequestBody OpportunityPriorityRequest request) {
+
+        OpportunityDto updatedOpportunity = opportunityService.setPriority(id, request);
+        return ResponseEntity.ok(updatedOpportunity);
+    }
+
+    /**
+     * GET /api/opportunities/funnel : 獲取銷售漏斗資料
+     * @return 包含所有活躍銷售階段及其商機的列表
+     */
+    @GetMapping("/funnel")
+    public ResponseEntity<List<SalesFunnelDto>> getSalesFunnel() {
+        List<SalesFunnelDto> funnelData = opportunityService.getSalesFunnelData();
+        return ResponseEntity.ok(funnelData);
     }
 }

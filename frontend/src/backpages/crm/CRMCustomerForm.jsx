@@ -31,8 +31,8 @@ const CRMCustomerForm = ({ onSubmit }) => {
   const [form] = Form.useForm();
 
   const handleFinish = (values) => {
-    console.log('提交客戶資料:', values);
-    message.success('新增客戶成功');
+    console.log('提交聯絡人資料:', values);
+    message.success('新增聯絡人成功');
     onSubmit?.(values);
   };
 
@@ -96,7 +96,7 @@ const CRMCustomerForm = ({ onSubmit }) => {
       <Form.Item>
         <Space>
           <Button type="primary" icon={<UserAddOutlined />} htmlType="submit">
-            新增客戶
+            新增聯絡人
           </Button>
           <Button htmlType="reset">清除</Button>
         </Space>

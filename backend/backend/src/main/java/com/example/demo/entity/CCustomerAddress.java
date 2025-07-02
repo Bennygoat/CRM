@@ -21,10 +21,11 @@ public class CCustomerAddress {
 
     private String name;
     private String phone;
-    private String street;
-    private String city;
-    private String district;
-    private String zipcode;
+    private String address; // 完整地址
+//    private String street;
+//    private String city;
+//    private String district;
+//    private String zipcode;
     private Boolean isdefault;
     private LocalDateTime createat;
     private LocalDateTime updateat;

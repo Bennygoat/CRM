@@ -7,6 +7,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import com.example.demo.service.erp.PurchaseOrderService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
@@ -16,8 +18,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.example.demo.dto.PurchaseOrderCreateDTO;
-import com.example.demo.dto.PurchaseOrderDetailCreateDTO;
+import com.example.demo.dto.erp.PurchaseOrderCreateDTO;
+import com.example.demo.dto.erp.PurchaseOrderDetailCreateDTO;
 import com.example.demo.entity.Product;
 import com.example.demo.entity.PurchaseOrder;
 import com.example.demo.entity.Supplier;

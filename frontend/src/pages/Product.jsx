@@ -1,45 +1,49 @@
-import ProductList from "../components/Home/ProductList";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import axios from "../api/axiosFrontend";
 import ProductCart from "../components/Product/ProductCart";
-import ProductDescription from "../components/Product/ProductDescription";
-
-const lightPackProducts = [
-  {
-    id: "lime6",
-    imageSrc: "../../assets/product1.jpg",
-    title: "2025全新口味｜檸檬煉乳冰棒6入組",
-    price: "NT$300",
-    tag: "NEW"
-  },
-  {
-    id: "sugarapple12",
-    imageSrc: "../../assets/product1.jpg",
-    title: "大目釋迦冰棒12入組｜台東大目釋迦",
-    price: "NT$910",
-    tag: "含果粒全新概念冰棒"
-  },
-  {
-    id: "melon12",
-    imageSrc: "../../assets/product1.jpg",
-    title: "香瓜冰棒12入組｜台灣美濃瓜",
-    price: "NT$910",
-    
-  },
-  {
-    id: "mango12",
-    imageSrc: "../../assets/product1.jpg",
-    title: "夏雪芒果冰棒12入組｜台東夏雪芒果",
-    price: "NT$910",
-    
-  }
-];
 
 function Product() {
+  const { id } = useParams();
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchProductDetail = async () => {
+      try {
+        const response = await axios.get(`/products/details/${id}`);
+
+        const rawData = response.data;
+        const formattedProduct = {
+          id: rawData.productId,
+          name: rawData.name,
+          price: rawData.price,
+          image: rawData.imageUrls?.[0] || "",
+          descriptionList: rawData.description
+            ? rawData.description.split("\n") // ← 根據你後端格式改成你需要的分割方式
+            : [],
+        };
+
+        setProduct(formattedProduct);
+        console.log("取得商品資料成功", formattedProduct);
+      } catch (err) {
+        console.error("取得商品失敗", err);
+        setError("無法載入商品資料");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProductDetail();
+  }, [id]);
+
+
+  if (loading) return <p className="p-10">載入中...</p>;
+  if (error) return <p className="p-10 text-red-500">{error}</p>;
+
   return (
-    <>
-      <ProductCart />
-      <ProductDescription />
-      <ProductList products={lightPackProducts} />
-    </>
+    <ProductCart product={product} />
   );
 }
 

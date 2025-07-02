@@ -2,6 +2,39 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
-html, body, input, textarea, button, select, a, div, span, p {
-  cursor: url('/cursors/cursor01.cur') 0 0, auto !important;
+/* 只套用在前台時才顯示客製化游標 */
+body.cursor-frontend,
+body.cursor-frontend * {
+  cursor: url('/cursors/cursor04.png') 0 0, auto !important;
+}
+
+@keyframes scroll-right {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+@keyframes scroll-left {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+.animate-scroll-right {
+  animation: scroll-right 50s linear infinite;
+}
+.animate-scroll-left {
+  animation: scroll-left 50s linear infinite;
+}
+
+.text-outline-black {
+  text-shadow:
+     -0.5px -0.5px 0 rgba(0, 0, 0, 0.8),
+     0.5px -0.5px 0 rgba(0, 0, 0, 0.8),
+    -0.5px  0.5px 0 rgba(0, 0, 0, 0.8),
+     0.5px  0.5px 0 rgba(0, 0, 0, 0.8);
 }

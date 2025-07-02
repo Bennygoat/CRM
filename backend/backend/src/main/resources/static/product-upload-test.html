@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>商品上傳測試</title>
+</head>
+<body>
+<h1>新增商品</h1>
+<form id="productForm" action="/api/erp/products" method="post" enctype="multipart/form-data">
+    <h3>商品資料 (JSON)</h3>
+    <textarea name="productData" rows="10" cols="50">
+{
+  "productCode": "P002",
+  "name": "測試杯裝冰淇淋",
+  "description": "這是一個測試商品",
+  "categoryId": 2,
+  "unitId": 1,
+  "basePrice": 99.00,
+  "safetyStockQuantity": 20
+}
+        </textarea>
+    <br><br>
+
+    <h3>商品圖片 (可多選)</h3>
+    <input type="file" name="files" multiple>
+    <br><br>
+
+    <button type="submit">送出</button>
+</form>
+</body>
+</html>

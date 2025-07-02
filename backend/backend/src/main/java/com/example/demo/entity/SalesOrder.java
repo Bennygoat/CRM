@@ -30,8 +30,6 @@ public class SalesOrder {
     @JoinColumn(name = "customer_id")
     private CustomerBase customer;
 
-
-
     @Column(name = "contact_person_id")
     private Long contactPersonId;
 
@@ -76,6 +74,11 @@ public class SalesOrder {
 
     @Column(name = "remarks", columnDefinition = "TEXT")
     private String remarks;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "warehouse_id", nullable = false)
+    private Warehouse warehouse;
+
 
     @Column(name = "created_by", nullable = false)
     private Long createdBy;

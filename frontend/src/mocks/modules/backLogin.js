@@ -3,12 +3,12 @@ import { rest } from 'msw';
 
 export const backLoginHandlers = [
   // 登入
-  rest.post('/api/backauth/login', async (req, res, ctx) => {
+  rest.post('/api/user/auth/login', async (req, res, ctx) => {
     const { account, password } = await req.json();
 
     // 模擬三種角色
     let role;
-    if (account === 'admin' && password === 'admin123') role = 'admin';
+    if (account === 'admin' && password === 'Admin123!@#') role = 'admin';
     else if (account === 'editor' && password === 'editor123') role = 'editor';
     else if (account === 'manager' && password === 'manager123') role = 'manager';
     else {

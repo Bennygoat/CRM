@@ -1,42 +1,70 @@
 import React, { useEffect, useState } from 'react';
-import { Calendar, Select, Button, Badge, Modal, Tooltip } from 'antd';
+import {
+  Calendar,
+  Select,
+  Form,
+  Input,
+  DatePicker,
+  TimePicker,
+  Modal,
+  Button,
+  Badge,
+  Tooltip,
+  message,
+} from 'antd';
 import dayjs from 'dayjs';
-import axios from '../../api/axiosBackend'; 
+import axios from '../../api/axiosBackend';
 
 const { Option } = Select;
+const { TextArea } = Input;
 
 const CRMCalendar = () => {
   const [current, setCurrent] = useState(dayjs());
   const [selectedDate, setSelectedDate] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [eventsData, setEventsData] = useState({}); // key: date, value: event[]
+  const [eventsData, setEventsData] = useState({});
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [form] = Form.useForm();
 
   const currentYear = dayjs().year();
   const years = Array.from({ length: currentYear - 2015 + 1 }, (_, i) => 2015 + i);
   const months = Array.from({ length: 12 }, (_, i) => i);
 
+  const colorMap = {
+    MEETING: 'processing',
+    CALL: 'warning',
+    TASK: 'default',
+    EMAIL: 'success',
+    DEADLINE: 'error',
+  };
+
+  const fetchData = async () => {
+    try {
+      const start = `${current.year()}-01-01`;
+      const end = `${current.year() + 1}-01-01`;
+      const res = await axios.get('/activities', { params: { start, end } });
+
+      const grouped = {};
+      res.data.forEach((event) => {
+        const date = dayjs(event.startTime).format('YYYY-MM-DD');
+        if (!grouped[date]) grouped[date] = [];
+        grouped[date].push({
+          title: event.title,
+          content: event.notes,
+          time: `${dayjs(event.startTime).format('HH:mm')} - ${dayjs(event.endTime).format('HH:mm')}`,
+          type: colorMap[event.activityType] || 'default',
+        });
+      });
+
+      setEventsData(grouped);
+    } catch (error) {
+      console.error('載入活動資料失敗：', error);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await axios.get('/crmcalendar-events', {
-          params: {
-            year: current.year(),
-            month: current.month() + 1, // dayjs 是 0-based month
-          },
-        });
-        const grouped = {};
-        res.data.forEach((event) => {
-          const date = dayjs(event.date).format('YYYY-MM-DD');
-          if (!grouped[date]) grouped[date] = [];
-          grouped[date].push(event);
-        });
-        setEventsData(grouped);
-      } catch (error) {
-        console.error('載入行事曆事件失敗：', error);
-      }
-    };
     fetchData();
-  }, [current.year(), current.month()]);
+  }, [current.year()]);
 
   const getListData = (value) => {
     const key = value.format('YYYY-MM-DD');
@@ -72,9 +100,7 @@ const CRMCalendar = () => {
           {content}
         </div>
       </Tooltip>
-    ) : (
-      content
-    );
+    ) : content;
   };
 
   const customHeader = ({ value, onChange }) => (
@@ -110,17 +136,43 @@ const CRMCalendar = () => {
           ))}
         </Select>
 
-        <Button
-          type="default"
-          size="middle"
-          className="text-base px-4"
-          onClick={() => onChange(dayjs())}
-        >
+        <Button type="default" size="middle" onClick={() => onChange(dayjs())}>
           今天
+        </Button>
+
+        <Button type="primary" onClick={() => setCreateModalVisible(true)}>
+          新增活動
         </Button>
       </div>
     </div>
   );
+
+  const handleCreate = async () => {
+    try {
+      const values = await form.validateFields();
+      const startTime = dayjs(values.date).hour(values.startTime.hour()).minute(values.startTime.minute());
+      const endTime = dayjs(values.date).hour(values.endTime.hour()).minute(values.endTime.minute());
+
+      const payload = {
+        title: values.title,
+        activityType: values.activityType,
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        notes: values.notes,
+        opportunityId: 0,
+        contactId: 0,
+      };
+
+      await axios.post('/activities', payload);
+      message.success('活動新增成功');
+      setCreateModalVisible(false);
+      form.resetFields();
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      message.error('請確認欄位是否正確填寫');
+    }
+  };
 
   return (
     <div className="p-4 bg-white">
@@ -149,6 +201,47 @@ const CRMCalendar = () => {
             </li>
           ))}
         </ul>
+      </Modal>
+
+      {/* 新增活動 */}
+      <Modal
+        open={createModalVisible}
+        title="新增活動"
+        onCancel={() => setCreateModalVisible(false)}
+        onOk={handleCreate}
+        okText="新增"
+      >
+        <Form layout="vertical" form={form}>
+          <Form.Item name="title" label="標題" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+
+          <Form.Item name="activityType" label="活動類型" rules={[{ required: true }]}>
+            <Select>
+              <Option value="MEETING">會議</Option>
+              <Option value="CALL">電話</Option>
+              <Option value="TASK">任務</Option>
+              <Option value="EMAIL">郵件</Option>
+              <Option value="DEADLINE">截止日</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item name="date" label="日期" rules={[{ required: true }]}>
+            <DatePicker className="w-full" />
+          </Form.Item>
+
+          <Form.Item label="開始時間" name="startTime" rules={[{ required: true }]}>
+            <TimePicker className="w-full" format="HH:mm" />
+          </Form.Item>
+
+          <Form.Item label="結束時間" name="endTime" rules={[{ required: true }]}>
+            <TimePicker className="w-full" format="HH:mm" />
+          </Form.Item>
+
+          <Form.Item name="notes" label="備註">
+            <TextArea rows={3} />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

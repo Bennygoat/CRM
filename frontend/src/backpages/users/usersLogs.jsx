@@ -79,11 +79,8 @@ const UsersLogs = () => {
         loading={loading}
         rowKey="id"
         actionRef={actionRef}
-        pagination={{ pageSize: 10 }}
-        search={{
-          labelWidth: 'auto',
-          defaultCollapsed: false,
-        }}
+        search={false}
+        pagination={false}
         dateFormatter="string"
         headerTitle="使用者操作紀錄"
         options={false}
@@ -103,7 +100,9 @@ const UsersLogs = () => {
           fetchLogs(params);
         }}
       />
+      
     </div>
+    
   );
 };
 

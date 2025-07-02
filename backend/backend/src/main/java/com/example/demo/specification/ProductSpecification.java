@@ -21,7 +21,7 @@ public class ProductSpecification {
 
             
             if (categoryId != null) {
-                predicates.add(criteriaBuilder.equal(root.get("categoryId"), categoryId));
+                predicates.add(criteriaBuilder.equal(root.get("category").get("categoryId"), categoryId));
             }
 
             

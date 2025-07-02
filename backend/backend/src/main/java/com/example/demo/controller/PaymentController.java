@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.ecpay.AioCheckoutDto;
+import com.example.demo.dto.ecpay.EcpayPaymentData;
 import com.example.demo.entity.Order;
 import com.example.demo.enums.OrderStatus;
 import com.example.demo.repository.OrderRepository;
@@ -8,14 +9,18 @@ import com.example.demo.service.EcpayService;
 import com.example.demo.service.OrderService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-@Controller
+//@Controller
+@RestController
 @RequestMapping("/api/payments")
 public class PaymentController {
 
@@ -39,35 +44,78 @@ public class PaymentController {
         return "ecpay-checkout";
     }
 
+//    /**
+//     * 【建議新增】根據真實訂單 ID 發起金流支付
+//     * @param orderId 訂單 ID
+//     * @param model Spring Model
+//     * @return 導向到 ecpay-checkout 模板
+//     */
+//    @GetMapping("/order/{orderId}")
+//    @Transactional // 確保能正確 Lazy-load 訂單明細
+//    public String getOrderPaymentPage(@PathVariable("orderId") Integer orderId, Model model) {
+//        // 1. 查找訂單
+//        Order order = orderRepository.findById((long)orderId)
+//                .orElseThrow(() -> new EntityNotFoundException("找不到訂單 ID: " + orderId));
+//
+//        // 2. 檢查訂單狀態 (這部分的邏輯我們暫不處理，但保留原樣)
+//        if (order.getOrderStatus() != OrderStatus.PENDING_PAYMENT) {
+//            throw new IllegalStateException("此訂單狀態不是待付款，無法進行支付");
+//        }
+//
+//        // 3. 【核心修改】從訂單明細動態組合商品名稱字串
+//        String itemName = order.getOrderDetails().stream()
+//                .map(detail -> detail.getProduct().getName() + " x " + detail.getQuantity())
+//                .collect(Collectors.joining("#"));
+//
+//        // 4. 使用組合好的商品名稱字串來建立 AIO 物件
+//        AioCheckoutDto dto = ecpayService.createAioOrder(
+//                order.getTotalAmount().intValue(),
+//                itemName, // 使用上面組合好的真實商品名稱
+//                order.getMerchantTradeNo()
+//        );
+//
+//        model.addAttribute("ecpayUrl", ecpayProperties.getAio().getUrl());
+//        model.addAttribute("aioCheckoutDto", dto);
+//
+//        return "ecpay-checkout";
+//    }
+
     /**
-     * 【建議新增】根據真實訂單 ID 發起金流支付
+     * 【全新修改】根據訂單 ID 獲取發起支付所需的參數
      * @param orderId 訂單 ID
-     * @param model Spring Model
-     * @return 導向到 ecpay-checkout 模板
+     * @return 包含綠界 URL 和表單參數的 JSON 物件
      */
-    @GetMapping("/order/{orderId}")
-    public String payByOrder(@PathVariable Long orderId, Model model) {
-        // 1. 根據 ID 找到真實訂單
-        Order order = orderRepository.findById(orderId)
+    @GetMapping("/order/{orderId}") // 您也可以改成 @PostMapping，語意上更貼切
+    @Transactional
+    // ✨ 2. 移除 Model，回傳型別改為 ResponseEntity<EcpayPaymentData>
+    public ResponseEntity<EcpayPaymentData> getPaymentParameters(@PathVariable("orderId") Integer orderId) {
+
+        // --- 中間的邏輯幾乎不變 ---
+        Order order = orderRepository.findById((long)orderId)
                 .orElseThrow(() -> new EntityNotFoundException("找不到訂單 ID: " + orderId));
 
-        // 2. 檢查訂單狀態是否為 PENDING_PAYMENT
         if (order.getOrderStatus() != OrderStatus.PENDING_PAYMENT) {
-            // 或者可以導向到一個錯誤頁面，提示訂單狀態不符
             throw new IllegalStateException("此訂單狀態不是待付款，無法進行支付");
         }
 
-        // 3. 使用真實訂單的資訊來建立 AIO 物件
+        String itemName = order.getOrderDetails().stream()
+                .map(detail -> detail.getProduct().getName() + " x " + detail.getQuantity())
+                .collect(Collectors.joining("#"));
+
         AioCheckoutDto dto = ecpayService.createAioOrder(
-                order.getTotalAmount().intValue(), // 使用真實總金額
-                "訂單 " + order.getMerchantTradeNo() + " 商品一批", // 使用真實訂單資訊
-                order.getMerchantTradeNo() // 使用真實訂單號
+                order.getTotalAmount().intValue(),
+                itemName,
+                order.getMerchantTradeNo()
         );
 
-        model.addAttribute("ecpayUrl", ecpayProperties.getAio().getUrl());
-        model.addAttribute("aioCheckoutDto", dto);
+        // ✨ 3. 將需要的資料包裝起來
+        EcpayPaymentData paymentData = new EcpayPaymentData(
+                ecpayProperties.getAio().getUrl(), // 綠界表單要提交的 action URL
+                dto // 包含所有表單參數的 DTO
+        );
 
-        return "ecpay-checkout";
+        // ✨ 4. 直接回傳 JSON 資料和 HTTP 200 OK 狀態
+        return ResponseEntity.ok(paymentData);
     }
 
     /**

@@ -5,12 +5,12 @@ import com.example.demo.dto.response.BCustomerDto;
 import com.example.demo.entity.BCustomer;
 
 
-import com.example.demo.entity.Tag;
+import com.example.demo.entity.CustomerTag;
 import com.example.demo.enums.BCustomerIndustry;
 import com.example.demo.enums.BCustomerLevel;
 import com.example.demo.enums.BCustomerType;
 import com.example.demo.repository.BCustomerRepository;
-import com.example.demo.repository.TagRepository;
+import com.example.demo.repository.CustomerTagRepository;
 import com.example.demo.service.BCustomerService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,12 +28,12 @@ import java.util.stream.Collectors;
 public class BCustomerServiceImpl implements BCustomerService {
 
     private final BCustomerRepository BCustomerRepository;
-    private final TagRepository tagRepository;
+    private final CustomerTagRepository customerTagRepository;
 
     public BCustomerServiceImpl(BCustomerRepository BCustomerRepository,
-                                TagRepository tagRepository) {
+                                CustomerTagRepository customerTagRepository) {
         this.BCustomerRepository = BCustomerRepository;
-        this.tagRepository = tagRepository;
+        this.customerTagRepository = customerTagRepository;
     }
 
     /**
@@ -84,7 +84,10 @@ public class BCustomerServiceImpl implements BCustomerService {
         }
 
         if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
-            List<Tag> tags = tagRepository.findAllById(request.getTagIds());
+            List<CustomerTag> tags = customerTagRepository.findAllById(request.getTagIds());
+            if (tags.size() != request.getTagIds().size()) {
+                throw new EntityNotFoundException("一個或多個客戶標籤ID不存在。");
+            }
             BCustomer.setTags(new HashSet<>(tags));
         }
 
@@ -108,8 +111,13 @@ public class BCustomerServiceImpl implements BCustomerService {
         mapRequestToEntity(request, BCustomer);
 
         if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
-            List<Tag> tags = tagRepository.findAllById(request.getTagIds());
+            List<CustomerTag> tags = customerTagRepository.findAllById(request.getTagIds());
+            if (tags.size() != request.getTagIds().size()) {
+                throw new EntityNotFoundException("一個或多個客戶標籤ID不存在。");
+            }
             BCustomer.setTags(new HashSet<>(tags));
+        } else {
+            BCustomer.getTags().clear();
         }
 
         BCustomer updatedBCustomer = BCustomerRepository.save(BCustomer);
@@ -196,15 +204,15 @@ public class BCustomerServiceImpl implements BCustomerService {
         dto.setIndustry(BCustomer.getIndustry());
         dto.setBCustomerType(BCustomer.getBCustomerType());
         dto.setBCustomerLevel(BCustomer.getBCustomerLevel());
-        dto.setCustomerAddress(BCustomer.getCustomerAddress());
-        dto.setCustomerTel(BCustomer.getCustomerTel());
-        dto.setCustomerEmail(BCustomer.getCustomerEmail());
+        dto.setCustomerAddress(BCustomer.getAddress());
+        dto.setCustomerTel(BCustomer.getTel());
+        dto.setCustomerEmail(BCustomer.getEmail());
         dto.setCreatedAt(BCustomer.getCreatedAt());
         dto.setUpdatedAt(BCustomer.getUpdatedAt());
 
         List<Long> tagIds = (BCustomer.getTags() != null && !BCustomer.getTags().isEmpty())
                 ? BCustomer.getTags().stream()
-                .map(Tag::getTagId)
+                .map(CustomerTag::getTagId)
                 .collect(Collectors.toList())
                 : List.of();
         dto.setTagIds(tagIds);
@@ -222,18 +230,8 @@ public class BCustomerServiceImpl implements BCustomerService {
         BCustomer.setIndustry(request.getIndustry());
         BCustomer.setBCustomerType(request.getBCustomerType());
         BCustomer.setBCustomerLevel(request.getBCustomerLevel());
-        BCustomer.setCustomerAddress(request.getCustomerAddress());
-        BCustomer.setCustomerTel(request.getCustomerTel());
-        BCustomer.setCustomerEmail(request.getCustomerEmail());
-
-        if (request.getTagIds() != null) {
-            HashSet<Tag> tags = new HashSet<>();
-            for (Long tagId : request.getTagIds()) {
-                Tag tag = tagRepository.findById(tagId)
-                        .orElseThrow(() -> new EntityNotFoundException("找不到標籤，ID: " + tagId));
-                tags.add(tag);
-            }
-            BCustomer.setTags(tags);
-        }
+        BCustomer.setAddress(request.getCustomerAddress());
+        BCustomer.setTel(request.getCustomerTel());
+        BCustomer.setEmail(request.getCustomerEmail());
     }
 }

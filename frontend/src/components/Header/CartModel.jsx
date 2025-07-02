@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
-import { FaTimes, FaPlus, FaMinus, FaShoppingCart } from 'react-icons/fa';
-import useCartStore from '../../stores/cartStore'; 
+import { useEffect, useState } from "react";
+import { FaTimes, FaPlus, FaMinus, FaShoppingCart } from "react-icons/fa";
+import useCartStore from "../../stores/cartStore";
+import { Link } from "react-router-dom";
 
 const CartModal = () => {
   const {
@@ -11,6 +12,10 @@ const CartModal = () => {
     removeItem,
     getTotalPrice,
     getTotalQuantity,
+    updateItemQuantityOnServer,
+    deleteItemFromServer,
+    clearCartFromServer,
+    fetchCartFromServer,
   } = useCartStore();
 
   const [shouldRender, setShouldRender] = useState(false);
@@ -18,21 +23,33 @@ const CartModal = () => {
   const totalPrice = getTotalPrice();
   const totalQuantity = getTotalQuantity();
 
+  // 初始載入購物車
   useEffect(() => {
-  if (isCartOpen) {
-    setShouldRender(true);
-    const timer = setTimeout(() => {
-      requestAnimationFrame(() => setAnimateIn(true));
-    }, 100);
-    return () => clearTimeout(timer);
-  } else {
-    setAnimateIn(false);
-    const timeout = setTimeout(() => setShouldRender(false), 300); // 時間和動畫一致
-    return () => clearTimeout(timeout);
-  }
-}, [isCartOpen]);
+    fetchCartFromServer();
+  }, []);
 
-if (!shouldRender) return null;
+  useEffect(() => {
+    if (isCartOpen) {
+      useCartStore.getState().fetchCartFromServer();
+    }
+  }, [isCartOpen]);
+
+  // 控制動畫與顯示
+  useEffect(() => {
+    if (isCartOpen) {
+      setShouldRender(true);
+      const timer = setTimeout(() => {
+        requestAnimationFrame(() => setAnimateIn(true));
+      }, 100);
+      return () => clearTimeout(timer);
+    } else {
+      setAnimateIn(false);
+      const timeout = setTimeout(() => setShouldRender(false), 300);
+      return () => clearTimeout(timeout);
+    }
+  }, [isCartOpen]);
+
+  if (!shouldRender) return null;
 
   return (
     <>
@@ -40,7 +57,7 @@ if (!shouldRender) return null;
       <div
         className={`
           fixed inset-0 bg-black bg-opacity-50 z-[55] transition-opacity duration-300
-          ${animateIn ? 'opacity-40' : 'opacity-0'}
+          ${animateIn ? "opacity-40" : "opacity-0"}
         `}
         onClick={closeCart}
       />
@@ -50,13 +67,15 @@ if (!shouldRender) return null;
         className={`
           fixed z-[60] bg-white shadow-xl flex flex-col
           transition-all duration-300 ease-out
-          ${animateIn ? 'opacity-100' : 'opacity-0'}
+          ${animateIn ? "opacity-100" : "opacity-0"}
 
           md:top-30 md:right-0 md:mr-[-4px] md:w-96 md:max-h-[80vh] md:rounded-lg md:border md:border-gray-200
-          md:transform ${animateIn ? 'md:translate-x-0' : 'md:translate-x-full'}
+          md:transform ${animateIn ? "md:translate-x-0" : "md:translate-x-full"}
 
           max-md:top-0 max-md:mt-[-0px] max-md:left-0 max-md:ml-[-8px] max-md:w-72 max-md:max-w-[85vw] max-md:h-full
-          max-md:transform ${animateIn ? 'max-md:translate-x-0' : 'max-md:-translate-x-full'}
+          max-md:transform ${
+            animateIn ? "max-md:translate-x-0" : "max-md:-translate-x-full"
+          }
         `}
       >
         {/* 標題列 */}
@@ -94,9 +113,9 @@ if (!shouldRender) return null;
                   共 {totalQuantity} 件商品
                 </span>
                 <button
-                  onClick={() => {
-                    if (window.confirm('確定要清空購物車嗎？')) {
-                      useCartStore.getState().clearCart();
+                  onClick={async () => {
+                    if (window.confirm("確定要清空購物車嗎？")) {
+                      await clearCartFromServer();
                     }
                   }}
                   className="text-xs text-red-500 hover:text-red-700 transition-colors"
@@ -127,13 +146,25 @@ if (!shouldRender) return null;
 
                     {/* 商品資訊 */}
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm truncate">{item.name}</h4>
-                      <p className="text-logo-blue font-semibold">${item.price}</p>
+                      <h4 className="font-medium text-sm truncate">
+                        {item.name}
+                      </h4>
+                      <p className="text-logo-blue font-semibold">
+                        ${item.price}
+                      </p>
 
                       {/* 數量控制 */}
                       <div className="flex items-center mt-2 space-x-2">
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          onClick={() => {
+                            if (item.cartDetailId) {
+                              updateItemQuantityOnServer(
+                                item.cartDetailId,
+                                item.quantity - 1
+                              );
+                            }
+                            updateQuantity(item.id, item.quantity - 1);
+                          }}
                           className="w-6 h-6 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded transition-colors"
                         >
                           <FaMinus className="text-xs" />
@@ -142,7 +173,15 @@ if (!shouldRender) return null;
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          onClick={() => {
+                            if (item.cartDetailId) {
+                              updateItemQuantityOnServer(
+                                item.cartDetailId,
+                                item.quantity + 1
+                              );
+                            }
+                            updateQuantity(item.id, item.quantity + 1);
+                          }}
                           className="w-6 h-6 flex items-center justify-center bg-logo-blue hover:bg-logo-blue/90 text-white rounded transition-colors"
                         >
                           <FaPlus className="text-xs" />
@@ -152,7 +191,12 @@ if (!shouldRender) return null;
 
                     {/* 移除按鈕 */}
                     <button
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => {
+                        if (item.cartDetailId) {
+                          deleteItemFromServer(item.cartDetailId);
+                        }
+                        removeItem(item.id);
+                      }}
                       className="text-red-500 hover:text-red-700 p-1 transition-colors"
                     >
                       <FaTimes />
@@ -173,9 +217,11 @@ if (!shouldRender) return null;
                 ${totalPrice.toFixed(2)}
               </span>
             </div>
-            <button className="w-full bg-logo-blue hover:bg-logo-blue/90 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
-              前往結帳
-            </button>
+            <Link to="/cart" onClick={closeCart}>
+              <button className="w-full bg-logo-blue hover:bg-logo-blue/90 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                前往結帳
+              </button>
+            </Link>
           </div>
         )}
       </div>

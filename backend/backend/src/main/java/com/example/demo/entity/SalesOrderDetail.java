@@ -79,9 +79,7 @@ public class SalesOrderDetail {
         return product != null ? product.getProductId() : null;
     }
 
-    public void setProductId(Long productId) {
-        // This method intentionally left empty to maintain compatibility
-        // The product relationship should be set directly instead
+
     }
 
-}
+

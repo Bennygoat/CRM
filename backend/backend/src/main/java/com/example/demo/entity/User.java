@@ -40,12 +40,12 @@ public class User {
     // 還是保留，單純方便gui查看角色roleName
     private String roleName;
 
-    @CreatedDate // Use annotation
-    @Column(name = "created_at", nullable = false, updatable = false) //TODO(joshkuei): Add for test.
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false) //TODO(joshkuei): Use annotation to create
     private LocalDateTime createdAt;
 
-    @LastModifiedDate // Use annotation
-    @Column(name = "updated_at", nullable = false) //TODO(joshkuei): Add for test.
+    @LastModifiedDate
+    @Column(name = "updated_at", nullable = false) //TODO(joshkuei): Use annotation to create
     private LocalDateTime updatedAt;
 
     private LocalDateTime lastLogin;
@@ -72,6 +72,7 @@ public class User {
 
 
 
+    @Builder.Default
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_authority",
@@ -80,6 +81,7 @@ public class User {
     )
     private List<Authority> authorities = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserLogAction> logactions = new ArrayList<>();
 }
