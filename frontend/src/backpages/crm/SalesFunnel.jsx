@@ -19,31 +19,34 @@ export default function SalesFunnel() {
     // 定義優先級和映射關係
     // 數字越小，優先級越高
     const tagPriority = {
-      // 階段標籤 (低優先級)
-      "初步接洽": 5, "需求分析": 5, "提案": 5, "談判": 5,
-      "已成交": 5, "已丟失": 5,
+      // 階段標籤 (低優先級，用於 fallback 或當沒有高優先級標籤時)
+      "初步接洽": 50, "需求分析": 50, "提案": 50, "談判": 50,
+      "已成交": 50, "已丟失": 50,
 
-      // 非階段性標籤 (高優先級)
+      // 非階段性標籤 (高優先級，用於主顏色)
       "高價值": 1,
       "緊急": 2,
       "新客戶": 3,
       "重點追蹤": 4,
       "已擱置": 0, // 已擱置可能會是一個主導顏色
+      "批發": 10, "零售": 11, "聯名": 12, "電商": 13, "福利": 14, "合約": 15,
+      "招標": 16, "健康": 17, "社區": 18, "會議": 19, "咖啡": 20, "團購": 21,
+      "影視": 22, "旅遊": 23, "文創": 24, "雜誌": 25, "教育": 26, "科技": 27,
+      "寵物": 28, "新品": 29 // 這些是您新增的更細分類標籤
     };
 
-    // 映射到 Ant Design 的 type 字符串 (如果 SalesFunnelBoard 使用此作 class 名稱)
+    // 映射到 Ant Design 的 type 字符串 (用於預設的 status 樣式，但我們將直接用 color)
     const typeMap = {
-      "初步接洽": "processing",
-      "需求分析": "success",
-      "提案": "warning",
-      "談判": "error",
-      "已成交": "success",
-      "已丟失": "default",
-      "高價值": "gold",    // 新增
-      "緊急": "red",      // 新增
-      "新客戶": "blue",    // 新增
-      "重點追蹤": "purple",  // 新增
-      "已擱置": "gray",     // 新增
+      "初步接洽": "processing", "需求分析": "success", "提案": "warning",
+      "談判": "error", "已成交": "success", "已丟失": "default",
+      "高價值": "gold", "緊急": "red", "新客戶": "blue", "重點追蹤": "purple",
+      "已擱置": "gray",
+      // 其他新增標籤的映射，如果需要 AntD 內建 status
+      "批發": "processing", "零售": "default", "聯名": "success", "電商": "warning",
+      "福利": "processing", "合約": "error", "招標": "error", "健康": "success",
+      "社區": "processing", "會議": "default", "咖啡": "warning", "團購": "gold",
+      "影視": "blue", "旅遊": "processing", "文創": "purple", "雜誌": "volcano",
+      "教育": "cyan", "科技": "geekblue", "寵物": "lime", "新品": "magenta"
     };
 
     let selectedType = defaultTagType;
@@ -51,12 +54,13 @@ export default function SalesFunnel() {
     let highestPriority = Infinity; // 數字越小，優先級越高
 
     if (tags && tags.length > 0) {
+      // 找到優先級最高的標籤來決定卡片主色
       tags.forEach(tag => {
         const priority = tagPriority[tag.tagName] !== undefined ? tagPriority[tag.tagName] : Infinity;
         if (priority < highestPriority) {
           highestPriority = priority;
           selectedType = typeMap[tag.tagName] || defaultTagType;
-          selectedColor = tag.color || defaultColor;
+          selectedColor = tag.color || defaultColor; // 直接從 tag 對象獲取顏色
         }
       });
     }
@@ -71,20 +75,23 @@ export default function SalesFunnel() {
 
         const funnelData = {};
         res.data.forEach((stageItem) => {
-          const key = stageItem.stageDisplayName;
+          const key = stageItem.stageDisplayName; // 這是後端返回的階段顯示名稱
 
           funnelData[key] = stageItem.opportunities.map((op) => {
             const tags = op.tags ?? [];
+            // 確保 averageRating 是數字，即使後端傳來 null 或 undefined
+            const rating = Math.round(op.averageRating ?? 0);
+
             const { type, color } = mapTagDataToFrontend(tags); // 使用輔助函數獲取類型和顏色
 
             return {
               id: `c${op.opportunityId}`,
               title: op.opportunityName,
-              rating: Math.round(op.averageRating ?? 0),
-              type,  // 用於 ProTable 的 type 篩選或特定樣式
-              color, // 直接傳遞顏色代碼給子組件
-              tags,  // 傳遞完整的 tags 陣列，可能包含多個標籤
-              ...op, // 展開原始商機數據
+              rating: rating,  // 直接傳遞計算好的評分數字
+              type,            // 用於 ProTable 的 type 篩選或特定樣式
+              color,           // 直接傳遞顏色代碼給 SalesFunnelBoard
+              tags,            // 傳遞完整的 tags 陣列，可能包含多個標籤
+              ...op,           // 展開原始商機數據
             };
           });
         });
@@ -189,7 +196,7 @@ export default function SalesFunnel() {
             <Descriptions.Item label="聯絡人">
               {selectedOpportunity.contactName || "-"}
             </Descriptions.Item>
-            {/* 這裡也可以顯示標籤顏色和星星 */}
+            {/* 這裡顯示所有標籤和顏色 */}
             {selectedOpportunity.tags && selectedOpportunity.tags.length > 0 && (
               <Descriptions.Item label="標籤">
                 {selectedOpportunity.tags.map((tag, index) => (
@@ -205,6 +212,7 @@ export default function SalesFunnel() {
                 ))}
               </Descriptions.Item>
             )}
+            {/* 顯示評分星星 */}
             {selectedOpportunity.rating !== undefined && (
               <Descriptions.Item label="評分">
                 {"⭐".repeat(selectedOpportunity.rating)}
