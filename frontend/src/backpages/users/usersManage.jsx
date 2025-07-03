@@ -18,14 +18,15 @@ const UsersManage = () => {
   const fetchData = async (page = 1) => {
     setLoading(true);
     try {
-      const res = await axios.get("/admin/users", {
+      const res = await axios.post("/user/search", {
         params: {
-          page,
-          pageSize: PAGE_SIZE,
+          page: page - 1,
+          size: PAGE_SIZE,
         },
       });
-      setData(res.data.data);
-      setTotal(res.data.total);
+      setData(res.data.content);
+      setTotal(res.data.totalElements);
+      console.log("使用者資料:", res.data.content);
     } catch (error) {
       console.error("使用者資料抓取失敗:", error);
     } finally {
@@ -40,7 +41,7 @@ const UsersManage = () => {
   const columns = [
     {
       title: "使用者名稱",
-      dataIndex: "name",
+      dataIndex: "userName",
       copyable: true,
       ellipsis: true,
     },
@@ -50,38 +51,31 @@ const UsersManage = () => {
     },
     {
       title: "帳號狀態",
-      dataIndex: "status",
-      valueType: "select",
-      valueEnum: {
-        active: { text: "啟用中", status: "Success" },
-        inactive: { text: "已停用", status: "Default" },
-        suspended: { text: "暫停中", status: "Warning" },
-      },
+      dataIndex: "active",
+      render: (val) =>
+        val ? (
+          <Tag color="green">啟用中</Tag>
+        ) : (
+          <Tag color="default">已停用</Tag>
+        ),
     },
     {
       title: "使用者身分",
-      dataIndex: "role",
-      valueType: "select",
-      valueEnum: {
-        admin: { text: "管理者", status: "Success" },
-        support: { text: "客服", status: "Processing" },
-        sales: { text: "業務", status: "Warning" },
-        guest: { text: "訪客", status: "Default" },
-      },
-      render: (_, record) => (
+      dataIndex: "roleName",
+      render: (text) => (
         <Tag color="blue">
           {{
-            admin: "管理者",
-            support: "客服",
-            sales: "業務",
-            guest: "訪客",
-          }[record.role] || "未指定"}
+            ADMIN: "管理者",
+            SUPPORT: "客服",
+            SALES: "業務",
+            GUEST: "訪客",
+          }[text] || "未指定"}
         </Tag>
       ),
     },
     {
-      title: "建立時間",
-      dataIndex: "created_at",
+      title: "啟用期限",
+      dataIndex: "accessEndDate",
       valueType: "date",
       hideInSearch: true,
     },
@@ -90,15 +84,15 @@ const UsersManage = () => {
       valueType: "option",
       key: "option",
       render: (_, record) => [
-        <a key="edit" onClick={() => navigate(`/users/authority`)}>
+        <a
+          key={`edit-${record.userId}`}
+          onClick={() => navigate(`/users/management/edit/${record.account}`)}
+        >
           編輯
         </a>,
         <TableDropdown
-          key="dropdown"
-          menus={[
-            { key: "reset", name: "重設密碼" },
-            { key: "delete", name: "刪除帳號" },
-          ]}
+          key={`dropdown-${record.userId}`}
+          menus={[{ key: "delete", name: "刪除帳號" }]}
         />,
       ],
     },
@@ -111,7 +105,7 @@ const UsersManage = () => {
         actionRef={actionRef}
         dataSource={data}
         loading={loading}
-        rowKey="id"
+        rowKey="userId"
         search={false}
         pagination={false}
         dateFormatter="string"
@@ -122,7 +116,7 @@ const UsersManage = () => {
             key="new"
             icon={<PlusOutlined />}
             type="primary"
-            onClick={() => navigate("/admin/users/new")}
+            onClick={() => navigate("/users/management/register")}
           >
             新增使用者
           </Button>,

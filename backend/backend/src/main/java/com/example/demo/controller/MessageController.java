@@ -7,6 +7,7 @@ import com.example.demo.dto.response.MessageResponse;
 import com.example.demo.entity.MessageReply;
 import com.example.demo.enums.AuthorityCode;
 import com.example.demo.enums.SenderType;
+import com.example.demo.exception.NoAuthorityException;
 import com.example.demo.security.CheckAuthority;
 import com.example.demo.security.CheckJwt;
 import com.example.demo.service.CCustomerService;
@@ -36,7 +37,7 @@ public class MessageController {
         this.cCustomerService = cCustomerService;
     }
 
-    // 建立留言主題
+    // 建立留言主題(問題)
     @CheckJwt
     @PostMapping("/create")
     public ResponseEntity<MessageResponse> createMessage(
@@ -67,7 +68,7 @@ public class MessageController {
 
     // 管理員留言回覆
     @CheckJwt
-    @PostMapping("/{messageId}/reply/admin")
+    @PostMapping("/{messageId}/reply/user")
     @CheckAuthority(AuthorityCode.CUSTOMER_SUPPORT) // 自定義權限驗證註解
     public ResponseEntity<MessageReplyResponse> replyAsAdmin(
             HttpServletRequest request,
@@ -81,7 +82,7 @@ public class MessageController {
     }
 
 
-    // 調閱客戶、員工所有留言
+    // 客戶查看自己的所有問題清單
     @CheckJwt
     @GetMapping("/list")
     public ResponseEntity<List<MessageResponse>> getMessages(HttpServletRequest request){
@@ -92,14 +93,31 @@ public class MessageController {
         return ResponseEntity.ok(messages);
     }
 
-    // 查詢留言對話內容
+    // 查詢對應客戶問題id的留言對話內容(現在可以跑、共用，但是以後要修正，避免沒有權限的客戶依據msgid存取)
     @CheckJwt
     @GetMapping("/{messageId}/replies")
     public ResponseEntity<List<MessageReplyResponse>> getReplies(
+            HttpServletRequest req,
             @PathVariable Long messageId
     ) {
+        String account = (String)req.getAttribute("account");
+
+        if(!messageService.isMessageAccessibleByAccount(messageId, account)){
+            throw new NoAuthorityException("您沒有訪問此對話的權限");
+        }
+
+
         List<MessageReplyResponse> replies = messageReplyService.getRepliesForMessage(messageId);
         return ResponseEntity.ok(replies);
     }
 
+    //客服可查任一客戶留言清單
+    @CheckJwt
+    @CheckAuthority(AuthorityCode.CUSTOMER_SUPPORT)
+    @GetMapping("/user/customer/{customerId}/list")
+    public ResponseEntity<List<MessageResponse>> getMessagesForCustomer(
+            @PathVariable Long customerId) {
+        List<MessageResponse> messages = messageService.getMessagesByCustomer(customerId);
+        return ResponseEntity.ok(messages);
+    }
 }

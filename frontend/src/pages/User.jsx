@@ -28,11 +28,11 @@ function User() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6 text-sm">
         <div>
-          你好, <span className="font-bold">{user?.name || '訪客'}</span>
+          你好, <span className="font-bold">{user?.customerName || '訪客'}</span>
         </div>
         <div className="flex items-center gap-4">
           <button
-            className="text-blue-600 hover:underline"
+            className="text-logo-blue hover:underline"
             onClick={() => {
               logout();
               navigate('/login');
@@ -52,7 +52,7 @@ function User() {
               onClick={() => setActiveTab(index)}
               className={`py-3 cursor-pointer transition-all duration-200 ${
                 activeTab === index
-                  ? 'text-logo-tan border-b-2 border-logo-tan bg-white font-semibold'
+                  ? 'text-logo-blue border-b-2 border-logo-blue bg-white font-semibold'
                   : 'text-gray-500 hover:bg-gray-100'
               }`}
             >

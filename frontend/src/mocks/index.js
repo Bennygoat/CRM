@@ -15,6 +15,7 @@ import { usersManageHandler } from './modules/usersManage';
 import { userLogsHandler } from './modules/userLogs';
 import { backLoginHandlers } from './modules/backLogin';
 import { cmsproductdetailhandlers } from './modules/cmsproductdetail';
+import { usersMessagehandlers } from './modules/usersmessage';
 
 export const handlers = [
   ...newsHandlers,
@@ -33,6 +34,7 @@ export const handlers = [
   ...usersManageHandler,
   ...userLogsHandler,
   // ...backLoginHandlers,
-  ...cmsproductdetailhandlers
+  ...cmsproductdetailhandlers,
+  ...usersMessagehandlers,
 
 ];

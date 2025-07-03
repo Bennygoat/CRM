@@ -17,8 +17,13 @@ const usersConfig = {
         icon: <UserOutlined />,
         routes: [
           {
-            path: '/users/management/authority',
-            name: '權限管理',
+            path: '/users/management/edit',
+            name: '使用者權限',
+            hideInMenu: true,
+          },
+          {
+            path: '/users/management/register',
+            name: '新增使用者',
             hideInMenu: true,
           },
         ],    
@@ -32,6 +37,13 @@ const usersConfig = {
         path: '/users/message',
         name: '客服訊息',
         icon: <RobotOutlined />,
+        routes: [
+          {
+            path: '/users/message/:messageId',
+            name: '訊息對話',
+            hideInMenu: true,
+          },
+        ],
       },
     ],
   },

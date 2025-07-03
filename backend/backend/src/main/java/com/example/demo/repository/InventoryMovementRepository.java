@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import com.example.demo.entity.InventoryMovement;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,5 +22,8 @@ public interface InventoryMovementRepository extends JpaRepository<InventoryMove
             "GROUP BY YEAR(im.movementDate), MONTH(im.movementDate)")
     List<Object[]> findMonthlyInventoryValueChangeFrom(LocalDateTime startDate);
 
+
+    @Query("SELECT SUM(im.totalCostChange) FROM InventoryMovement im WHERE im.movementDate < :endDate")
+    BigDecimal findTotalValueBefore(LocalDateTime endDate);
     Optional<InventoryMovement> findByDocumentItemId(Long documentItemId);
 }

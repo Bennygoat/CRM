@@ -18,4 +18,6 @@ public interface UserRepo extends JpaRepository<User, Long>, JpaSpecificationExe
     List<User> findByAuthorities_Code(String code);
     // 腳色查詢
     List<User> findByRoleName(String roleName);
+    // 有無存在腳色
+    boolean existsByAccount(String account);
 }

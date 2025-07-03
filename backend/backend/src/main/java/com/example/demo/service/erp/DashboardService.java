@@ -20,6 +20,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -79,76 +80,53 @@ public class DashboardService {
     }
 
     private ComparisonChartData getInventoryValueComparisonChart() {
-        // 1. 取得當前庫存總價值作為計算基準
-        BigDecimal currentTotalValue = inventoryRepository.findCurrentTotalInventoryValue();
-        if (currentTotalValue == null) currentTotalValue = BigDecimal.ZERO;
-
-        // 2. 取得過去兩年的每月庫存價值「變動量」
         LocalDate startDate = LocalDate.now().minusYears(1).withDayOfYear(1);
         LocalDateTime startDateTime = startDate.atStartOfDay();
-        List<Object[]> monthlyChanges = inventoryMovementRepository.findMonthlyInventoryValueChangeFrom(startDateTime);
 
-        // 3. 從現在往回推算每個月的月底庫存總值
-        BigDecimal[] monthlyValues = new BigDecimal[24];
-        BigDecimal tempValue = currentTotalValue;
-
-//        for (int i = 0; i < 24; i++) {
-//            YearMonth targetMonth = YearMonth.now().minusMonths(i);
-//
-//            // 找到當月的變動量
-//            BigDecimal change = monthlyChanges.stream()
-//                    .filter(r -> (Integer)r[0] == targetMonth.getYear() && (Integer)r[1] == targetMonth.getMonthValue())
-//                    .map(r -> (BigDecimal)r[2])
-//                    .findFirst().orElse(BigDecimal.ZERO);
-//
-//            // 從現在往回推，所以要用「減法」。本月底的價值 = 上月底的價值 + 本月的變動
-//            // => 上月底的價值 = 本月底的價值 - 本月的變動
-//            tempValue = tempValue.subtract(change);
-//
-//            // 將計算出的上個月底的價值存起來
-//            if (i < 23) { // 我們只需要存到24個月前，所以最多存23次
-//                int targetIndex = (targetMonth.getYear() - startDate.getYear()) * 12 + (targetMonth.getMonthValue() - 1) -1;
-//                if(targetIndex >= 0) monthlyValues[targetIndex] = tempValue;
-//            }
-//        }
-//
-//        // 將計算結果轉換為 Query 需要的 List<Object[]> 格式
-//        List<Object[]> results = new ArrayList<>();
-//        for (int i = 0; i < 24; i++) {
-//            if (monthlyValues[i] != null) {
-//                YearMonth ym = YearMonth.from(startDate.plusMonths(i));
-//                results.add(new Object[]{ym.getYear(), ym.getMonthValue(), monthlyValues[i]});
-//            }
-//        }
-//
-//        return buildComparisonChartData(results);
-        for (int i = 0; i <= 24; i++) {
-            YearMonth processingMonth = YearMonth.now().minusMonths(i);
-
-            BigDecimal change = monthlyChanges.stream()
-                    .filter(r -> (Integer) r[0] == processingMonth.getYear() && (Integer) r[1] == processingMonth.getMonthValue())
-                    .map(r -> (r[2] instanceof Double ? BigDecimal.valueOf((Double) r[2]) : (BigDecimal) r[2]))
-                    .findFirst().orElse(BigDecimal.ZERO);
-
-            if (i > 0) {
-                int targetIndex = (processingMonth.getYear() - startDate.getYear()) * 12 + (processingMonth.getMonthValue() - 1);
-                if (targetIndex >= 0 && targetIndex < 24) {
-                    // 儲存的是上個月底的庫存價值
-                    monthlyValues[targetIndex] = tempValue.subtract(change);
-                }
-            }
-            tempValue = tempValue.subtract(change);
+        // 1. 取得「期初餘額」：計算圖表開始時間點之前的庫存總價值
+        BigDecimal initialValue = inventoryMovementRepository.findTotalValueBefore(startDateTime);
+        if (initialValue == null) {
+            initialValue = BigDecimal.ZERO;
         }
 
-        List<Object[]> results = new ArrayList<>();
+        // 2. 取得圖表時間範圍內，每個月的「淨變動」
+        List<Object[]> monthlyChangesRaw = inventoryMovementRepository.findMonthlyInventoryValueChangeFrom(startDateTime);
+        Map<YearMonth, BigDecimal> monthlyChangesMap = monthlyChangesRaw.stream()
+                .collect(Collectors.toMap(
+                        r -> YearMonth.of((Integer) r[0], (Integer) r[1]),
+                        r -> (r[2] instanceof Double ? BigDecimal.valueOf((Double) r[2]) : (BigDecimal) r[2])
+                ));
+
+        // 3. 採用「前向累加」演算法，計算每個月底的庫存總額
+        BigDecimal runningTotal = initialValue;
+        List<BigDecimal> thisYearData = new ArrayList<>(Collections.nCopies(12, BigDecimal.ZERO));
+        List<BigDecimal> lastYearData = new ArrayList<>(Collections.nCopies(12, BigDecimal.ZERO));
+        int currentYear = LocalDate.now().getYear();
+
         for (int i = 0; i < 24; i++) {
-            if (monthlyValues[i] != null) {
-                YearMonth ym = YearMonth.from(startDate.plusMonths(i));
-                results.add(new Object[]{ym.getYear(), ym.getMonthValue(), monthlyValues[i]});
+            YearMonth currentMonth = YearMonth.from(startDate.plusMonths(i));
+            if (currentMonth.isAfter(YearMonth.now())) {
+                break; // 不計算未來的月份
+            }
+
+            // 將當月的淨變動累加到總額上
+            runningTotal = runningTotal.add(monthlyChangesMap.getOrDefault(currentMonth, BigDecimal.ZERO));
+
+            // 將計算出的月底總額，填入對應年份的數據列表中
+            if (currentMonth.getYear() == currentYear) {
+                thisYearData.set(currentMonth.getMonthValue() - 1, runningTotal);
+            } else if (currentMonth.getYear() == currentYear - 1) {
+                lastYearData.set(currentMonth.getMonthValue() - 1, runningTotal);
             }
         }
 
-        return buildComparisonChartData(results);
+        ComparisonChartData chart = new ComparisonChartData();
+        chart.setSeries(List.of(
+                new Series("今年", thisYearData),
+                new Series("去年", lastYearData)
+        ));
+
+        return chart;
     }
 
 

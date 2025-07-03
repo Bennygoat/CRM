@@ -54,6 +54,7 @@ public class EcpayService {
         dto.setTradeDesc("交易描述範例"); // 可自行修改
         dto.setItemName(itemName);
         dto.setReturnURL(aioConfig.getReturnUrl());
+//        dto.setOrderResultURL(aioConfig.getOrderResultUrl());
 
         // 將 DTO 轉換為 Map 並產生 CheckMacValue
         Map<String, String> params = dto.toMap();

@@ -45,6 +45,9 @@ public class AioCheckoutDto {
     @JsonProperty("CheckMacValue")
     private String checkMacValue;
 
+//    @JsonProperty("OrderResultURL")
+//    private String orderResultURL;
+
 
     /**
      * 將 DTO 轉換為 Map 以便產生 CheckMacValue
@@ -62,6 +65,8 @@ public class AioCheckoutDto {
         map.put("ReturnURL", this.returnURL);
         map.put("ChoosePayment", this.choosePayment);
         map.put("EncryptType", String.valueOf(this.encryptType));
+//        map.put("OrderResultURL", this.orderResultURL);
+
         return map;
     }
 }

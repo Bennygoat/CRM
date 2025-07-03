@@ -69,7 +69,7 @@ const CartModal = () => {
           transition-all duration-300 ease-out
           ${animateIn ? "opacity-100" : "opacity-0"}
 
-          md:top-30 md:right-0 md:mr-[-4px] md:w-96 md:max-h-[80vh] md:rounded-lg md:border md:border-gray-200
+          md:top-20 md:right-0 md:mr-[-4px] md:w-96 md:max-h-[80vh] md:rounded-lg md:border md:border-gray-200
           md:transform ${animateIn ? "md:translate-x-0" : "md:translate-x-full"}
 
           max-md:top-0 max-md:mt-[-0px] max-md:left-0 max-md:ml-[-8px] max-md:w-72 max-md:max-w-[85vw] max-md:h-full

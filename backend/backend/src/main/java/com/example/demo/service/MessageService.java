@@ -6,10 +6,12 @@ import com.example.demo.dto.response.MessageResponse;
 import com.example.demo.entity.CCustomer;
 import com.example.demo.entity.Message;
 import com.example.demo.entity.MessageReply;
+import com.example.demo.entity.User;
 import com.example.demo.enums.SenderType;
 import com.example.demo.repository.CCustomerRepo;
 import com.example.demo.repository.MessageReplyRepo;
 import com.example.demo.repository.MessageRepo;
+import com.example.demo.repository.UserRepo;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -24,11 +26,13 @@ public class MessageService {
     private final MessageRepo messageRepo;
     private final MessageReplyRepo messageReplyRepo;
     private final CCustomerRepo cCustomerRepo;
+    private final UserRepo userRepo;
 
-    public MessageService(MessageRepo messageRepo, MessageReplyRepo messageReplyRepo, CCustomerRepo cCustomerRepo) {
+    public MessageService(MessageRepo messageRepo, MessageReplyRepo messageReplyRepo, CCustomerRepo cCustomerRepo, UserRepo userRepo) {
         this.messageRepo = messageRepo;
         this.messageReplyRepo = messageReplyRepo;
         this.cCustomerRepo = cCustomerRepo;
+        this.userRepo = userRepo;
     }
 
 
@@ -98,4 +102,27 @@ public class MessageService {
 
         return resp;
     }
+
+    // 檢視有無查看問題的權限
+    public boolean isMessageAccessibleByAccount(Long messageId, String account) {
+        Optional<Message> optionalMessage = messageRepo.findById(messageId);
+        if (optionalMessage.isEmpty()) return false;
+
+        Message message = optionalMessage.get();
+        String messageOwnerAccount = message.getCCustomer().getAccount();
+
+        // 如果是留言的客戶return true
+        if (messageOwnerAccount.equals(account)) return true;
+
+        // 如果是客服return true
+        Optional<User> optionalUser = userRepo.findByAccount(account);
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            return user.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getCode().equals("CUSTOMER_SUPPORT"));
+        }
+
+        return false;
+    }
+
 }

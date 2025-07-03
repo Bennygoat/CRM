@@ -1,85 +1,213 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import useCartStore from "../stores/cartStore";
+import axios from "../api/axiosFrontend";
+import { useNavigate } from "react-router-dom";
 
 function Cart() {
-  const [quantity, setQuantity] = useState(1);
-  const price = 910;
-  const discount = 50;
-  const shipping = 160;
+  const {
+    items,
+    fetchCartFromServer,
+    updateItemQuantityOnServer,
+    removeItemFromServer,
+    getTotalPrice,
+  } = useCartStore();
 
-  const handleDecrease = () => {
-    if (quantity > 1) setQuantity(quantity - 1);
+  const navigate = useNavigate();
+  const [paymentMethod, setPaymentMethod] = useState("CASH_ON_DELIVERY");
+  const [city, setCity] = useState("台北市");
+  const [address, setAddress] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        await fetchCartFromServer();
+      } catch (err) {
+        setErrorMsg("載入購物車失敗，請稍後再試");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCart();
+  }, []);
+
+  const handleDecrease = async (item) => {
+    const newQty = item.quantity - 1;
+    if (newQty <= 0) return;
+
+    try {
+      await updateItemQuantityOnServer(item.cartDetailId, newQty);
+      fetchCartFromServer();
+    } catch {
+      setErrorMsg("更新數量失敗");
+    }
   };
 
-  const handleIncrease = () => {
-    setQuantity(quantity + 1);
+  const handleIncrease = async (item) => {
+    const newQty = item.quantity + 1;
+
+    try {
+      await updateItemQuantityOnServer(item.cartDetailId, newQty);
+      fetchCartFromServer();
+    } catch {
+      setErrorMsg("更新數量失敗");
+    }
   };
 
-  const subtotal = price * quantity;
-  const total = subtotal - discount + shipping;
+  const handleCheckout = async () => {
+    if (!address) {
+      setErrorMsg("請填寫送貨地址");
+      return;
+    }
+
+    try {
+      const res = await axios.post("/orders/create", {
+        address: city + address,
+        paymentMethod,
+      });
+
+      const order = res.data;
+      console.log("訂單建立成功", order);
+
+      if (paymentMethod === "ONLINE_PAYMENT") {
+        try {
+          const payRes = await axios.get(
+            `/payments/order/${order.orderid}`
+          );
+          console.log("取得付款連結", payRes.data);
+
+          const { ecpayUrl, aioCheckoutDto } = payRes.data;
+
+          const form = document.createElement("form");
+          form.method = "POST";
+          form.action = ecpayUrl;
+          form.target = "_blank";
+
+          for (const key in aioCheckoutDto) {
+            const input = document.createElement("input");
+            input.type = "hidden";
+            input.name = key;
+            input.value = aioCheckoutDto[key];
+            form.appendChild(input);
+          }
+
+          document.body.appendChild(form);
+          form.submit();
+          await fetchCartFromServer();
+          navigate("/");
+        } catch (err) {
+          console.error("取得綠界連結失敗", err);
+          setErrorMsg("無法跳轉綠界付款，請稍後再試");
+        }
+      } else {
+        await fetchCartFromServer();
+        navigate("/");
+      }
+    } catch (err) {
+      console.error("建立訂單失敗", err);
+      setErrorMsg("建立訂單失敗，請稍後再試");
+    }
+  };
+
+  const subtotal = getTotalPrice();
+  const total = subtotal;
+
+  if (loading) {
+    return <div className="text-center py-10">載入中...</div>;
+  }
 
   return (
     <div className="max-w-5xl mx-auto p-4 space-y-8">
-      {/* 進度條 */}
-      <div className="flex justify-center space-x-16 text-center">
-        <div className="flex flex-col items-center">
-          <div className="w-8 h-8 rounded-full bg-green-600 text-white">1</div>
-          <p>購物車</p>
+      {errorMsg && (
+        <div className="bg-red-100 text-red-700 p-2 rounded text-sm">
+          {errorMsg}
         </div>
-        <div className="flex flex-col items-center text-gray-400">
-          <div className="w-8 h-8 rounded-full bg-gray-300">2</div>
-          <p>填寫資料</p>
+      )}
+      {successMsg && (
+        <div className="bg-green-100 text-green-700 p-2 rounded text-sm">
+          {successMsg}
         </div>
-        <div className="flex flex-col items-center text-gray-400">
-          <div className="w-8 h-8 rounded-full bg-gray-300">3</div>
-          <p>訂單確認</p>
-        </div>
-      </div>
+      )}
 
       {/* 購物車項目 */}
       <div className="border rounded-md p-4">
-        <h2 className="text-lg font-bold mb-4">購物車（{quantity} 件）</h2>
-        <div className="flex items-center justify-between border-b pb-4">
-          <div className="flex items-center space-x-4">
-            <img
-              src="/img/product.jpg" // 你可以替換為真實圖片
-              alt="大目釋迦冰棒"
-              className="w-20 h-20 object-cover"
-            />
-            <div>
-              <p className="font-medium">大目釋迦冰棒12入組 | 台東大目釋迦</p>
-              <p className="text-sm text-gray-500">NT${price}</p>
+        <h2 className="text-lg font-bold mb-4">購物車（{items.length} 件）</h2>
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="flex items-center justify-between border-b pb-4 mb-4"
+          >
+            <div className="flex items-center space-x-4">
+              <img
+                src={item.image}
+                alt={item.name}
+                className="w-20 h-20 object-cover"
+              />
+              <div>
+                <p className="font-medium">{item.name}</p>
+                <p className="text-sm text-gray-500">NT${item.price}</p>
+              </div>
             </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => handleDecrease(item)}
+                className="px-2 py-1 border rounded hover:bg-gray-100"
+              >
+                −
+              </button>
+              <span>{item.quantity}</span>
+              <button
+                onClick={() => handleIncrease(item)}
+                className="px-2 py-1 border rounded hover:bg-gray-100"
+              >
+                ＋
+              </button>
+            </div>
+            <p className="font-bold">NT${item.price * item.quantity}</p>
           </div>
-          <div className="flex items-center space-x-2">
-            <button onClick={handleDecrease} className="px-2 py-1 border">−</button>
-            <span>{quantity}</span>
-            <button onClick={handleIncrease} className="px-2 py-1 border">＋</button>
-          </div>
-          <p className="font-bold">NT${price * quantity}</p>
-        </div>
+        ))}
       </div>
 
       {/* 訂單資訊 */}
       <div className="grid md:grid-cols-2 gap-6">
         <div>
-          <h3 className="font-semibold mb-2">選擇送貨及付款方式</h3>
+          <h3 className="font-semibold mb-2">送貨與付款</h3>
           <div className="space-y-4">
             <div>
-              <label className="block mb-1 text-sm">送貨地點</label>
-              <select className="w-full border p-2">
-                <option>台灣</option>
+              <label className="block mb-1 text-sm">城市/縣市</label>
+              <select
+                className="w-full border p-2"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+              >
+                <option>台北市</option>
+                <option>新北市</option>
+                <option>台中市</option>
+                <option>高雄市</option>
+                <option>台南市</option>
               </select>
             </div>
             <div>
-              <label className="block mb-1 text-sm">送貨方式</label>
-              <select className="w-full border p-2">
-                <option>黑貓・冷凍</option>
-              </select>
+              <label className="block mb-1 text-sm">詳細地址</label>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="例如：中山區南京東路3段20號"
+                className="w-full border p-2"
+              />
             </div>
             <div>
               <label className="block mb-1 text-sm">付款方式</label>
-              <select className="w-full border p-2">
-                <option>LINE Pay</option>
+              <select
+                className="w-full border p-2"
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              >
+                <option value="CASH_ON_DELIVERY">貨到付款</option>
+                <option value="ONLINE_PAYMENT">線上支付</option>
               </select>
             </div>
           </div>
@@ -92,20 +220,15 @@ function Cart() {
               <span>小計</span>
               <span>NT${subtotal}</span>
             </div>
-            <div className="flex justify-between text-green-600">
-              <span>折抵購物金</span>
-              <span>-NT${discount}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>運費</span>
-              <span>NT${shipping}</span>
-            </div>
             <div className="border-t mt-2 pt-2 flex justify-between font-bold text-lg">
               <span>合計</span>
               <span>NT${total}</span>
             </div>
           </div>
-          <button className="mt-4 w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition">
+          <button
+            onClick={handleCheckout}
+            className="mt-4 w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
+          >
             前往結帳
           </button>
         </div>

@@ -13,6 +13,7 @@ import User from "./pages/User.jsx";
 import SignFlow from "./pages/SignFlow.jsx";
 import SignSuccess from "./pages/SignSuccess.jsx";
 import Cart from "./pages/Cart.jsx";
+import ECPayRedirect from "./components/ECPayRedirect.jsx";
 
 import BaseLayout from "./layout/BaseLayout";
 import cmsConfig from "./configs/cmsConfig";
@@ -44,8 +45,10 @@ import ERPNewOrderForm from "./backpages/erp/ERPNewOrderForm.jsx";
 // 使用者角色和權限
 import UsersManage from "./backpages/users/usersManage.jsx";
 import UsersLogs from "./backpages/users/usersLogs.jsx";
-import UsersAuthority from "./backpages/users/usersAuthority.jsx";
+import UsersEdit from "./backcomponents/user/usersEdit.jsx";
 import UsersMessage from "./backpages/users/usersMessage.jsx";
+import UsersRegister from "./backcomponents/user/usersRegister.jsx";
+import UserMessageChat from "./backcomponents/user/MessageChat.jsx";
 
 const user = useBackUserStore.getState().backUser;
 const role = user?.role || "admin";
@@ -71,6 +74,7 @@ const router = createBrowserRouter([
       { path: "funnyerror", element: <FunnyError /> },
       { path: "user", element: <User /> },
       { path: "news/:id", element: <NewsDetail /> },
+      {path: "ecpay-redirect", element: <ECPayRedirect />}, 
     ],
   },
   {path: "/backlogin", element: <BackLogin />}, // 後台登入頁面
@@ -182,12 +186,20 @@ const router = createBrowserRouter([
           element: <UsersLogs />,
         },
         {
-          path: "authority",
-          element: <UsersAuthority />,
+          path: "management/edit/:account",
+          element: <UsersEdit />,
         },
         {
           path: "message",
           element: <UsersMessage />,
+        },
+        {
+          path: "management/register",
+          element: <UsersRegister />,
+        },
+        {
+          path: "message/:messageId",
+          element: <UserMessageChat />,
         },
       ],
   },
