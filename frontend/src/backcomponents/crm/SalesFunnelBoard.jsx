@@ -288,7 +288,7 @@ function SortableCard({
 
       {/* 星星評分 */}
       <div className="flex items-center text-sm text-gray-600">
-        {[...Array(3)].map((_, idx) =>
+        {[...Array(5)].map((_, idx) =>
           idx < currentRating ? (
             <FaStar
               key={idx}

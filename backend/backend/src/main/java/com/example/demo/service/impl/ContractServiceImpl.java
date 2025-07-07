@@ -40,7 +40,7 @@ public class ContractServiceImpl implements ContractService {
         // 3. 使用商機的資料建立新的 Contract 物件
         Contract contract = Contract.builder()
                 .contractNumber(generateUniqueContractNumber())
-                .title("關於 " + opportunity.getOpportunityName() + " 的合約")
+                .title(opportunity.getOpportunityName())
                 .contractType(ContractType.INFLUENCER_MARKETING)
                 .status(ContractStatus.DRAFT)
                 .startDate(LocalDate.now())

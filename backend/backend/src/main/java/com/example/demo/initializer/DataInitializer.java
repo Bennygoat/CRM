@@ -74,13 +74,11 @@ public class DataInitializer implements CommandLineRunner {
         }
         logger.info("--- 應用程式啟動，開始生成一年份的假資料 (僅限 dev profile) ---");
 
-        // 步驟 1: 建立「商機」專用的標籤，並取得它們的 ID
         List<Long> opportunityTagIds = createOpportunityTags(5);
         if (opportunityTagIds.isEmpty()) {
             logger.warn("未能建立任何商機標籤，商機將不會有關聯標籤。");
         }
 
-        // 步驟 2: 建立客戶和聯絡人 (此處不關聯任何標籤)
         List<Long> customerIds = createCustomers(20);
         if (customerIds.isEmpty()) {
             logger.error("未能創建任何客戶。終止資料生成。");
@@ -88,7 +86,6 @@ public class DataInitializer implements CommandLineRunner {
         }
         List<Long> contactIds = createContacts(30, customerIds);
 
-        // 步驟 3: 遍歷過去 12 個月，生成帶有關聯「商機標籤」的商機
         LocalDate today = LocalDate.now();
         for (int i = 11; i >= 0; i--) {
             LocalDate currentMonth = today.minusMonths(i).withDayOfMonth(1);
@@ -111,9 +108,6 @@ public class DataInitializer implements CommandLineRunner {
         logger.info("--- 所有年度假資料生成結束 ---");
     }
 
-    /**
-     * 建立「商機」標籤
-     */
     private List<Long> createOpportunityTags(int count) {
         logger.info("--- 開始生成商機標籤 ({} 筆)...", count);
         List<OpportunityTagRequest> fakeRequests = opportunityTagFaker.generateFakeTagRequests(count);
@@ -130,16 +124,12 @@ public class DataInitializer implements CommandLineRunner {
         return generatedIds;
     }
 
-    /**
-     * 商機隨機分配標籤
-     */
     private List<Long> createMonthlyOpportunities(int count, List<Long> customerIds, List<Long> contactIds, List<Long> allTagIds, LocalDate month) {
         logger.info("生成 {} 筆商機...", count);
         List<OpportunityRequest> fakeRequests = opportunityFaker.generateFakeOpportunityRequests(count, customerIds, contactIds);
         List<Long> generatedIds = new ArrayList<>();
 
         for (OpportunityRequest request : fakeRequests) {
-            // 設定歷史日期
             int dayOfMonth = random.nextInt(month.lengthOfMonth()) + 1;
             LocalDateTime creationDateTime = month.withDayOfMonth(dayOfMonth).atTime(random.nextInt(24), random.nextInt(60));
             request.setCreateDate(creationDateTime);
