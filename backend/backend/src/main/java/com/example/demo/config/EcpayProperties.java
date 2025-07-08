@@ -32,7 +32,7 @@ public class EcpayProperties {
         private String hashKey;
         private String hashIv;
         private String returnUrl;
-//        private String orderResultUrl;
+        private String clientBackUrl;
         // Getters and Setters for Aio...
     }
 

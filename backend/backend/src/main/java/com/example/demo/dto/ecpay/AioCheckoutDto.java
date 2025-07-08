@@ -45,8 +45,8 @@ public class AioCheckoutDto {
     @JsonProperty("CheckMacValue")
     private String checkMacValue;
 
-//    @JsonProperty("OrderResultURL")
-//    private String orderResultURL;
+    @JsonProperty("ClientBackURL")
+    private String clientBackURL;
 
 
     /**
@@ -65,7 +65,7 @@ public class AioCheckoutDto {
         map.put("ReturnURL", this.returnURL);
         map.put("ChoosePayment", this.choosePayment);
         map.put("EncryptType", String.valueOf(this.encryptType));
-//        map.put("OrderResultURL", this.orderResultURL);
+        map.put("ClientBackURL", this.clientBackURL);
 
         return map;
     }
