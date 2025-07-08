@@ -6,6 +6,7 @@ import { BarChartOutlined,
   CalendarOutlined,
   TeamOutlined,
   LineChartOutlined,
+  FunnelPlotOutlined,
  } from '@ant-design/icons';
  import { useNavigate } from 'react-router-dom';
 
@@ -42,7 +43,7 @@ const crmConfig = {
       {
         path: '/crm/salesfunnel',
         name: '銷售漏斗',
-        icon: <LineChartOutlined />,
+        icon: <FunnelPlotOutlined />,
       },
     ],
   },

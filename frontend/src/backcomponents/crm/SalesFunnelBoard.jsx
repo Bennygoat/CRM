@@ -1,4 +1,3 @@
-// SalesFunnelBoard.jsx
 import React, { useState } from "react";
 import axios from "../../api/axiosBackend";
 import {

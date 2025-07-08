@@ -4,6 +4,7 @@ import {
   AppstoreOutlined,
   RobotOutlined,
   BarChartOutlined,
+  ShoppingCartOutlined,
   DesktopOutlined,
 } from "@ant-design/icons";
 
@@ -31,6 +32,14 @@ const appListConfig = [
     desc: "客戶關係管理模組",
     url: "/crm",
     roles: ['admin'],
+  },
+  {
+     key: 'om',
+     icon: <ShoppingCartOutlined style={{ fontSize: "30px", color: "#08c" }} />,
+     title: "OM模組",
+     desc: "訂單管理管理模組",
+     url: "/om",
+     roles: ['admin'],
   },
   {
     key: 'cms',

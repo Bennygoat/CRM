@@ -114,8 +114,7 @@ export default function BaseLayout({ menuConfig, appListConfig }) {
             menuFooterRender={(props) =>
               props?.collapsed ? undefined : (
                 <div style={{ textAlign: "center", paddingTop: 12 }}>
-                  <div>© 2025 Made with Gchen</div>
-                  <div> Ant Design</div>
+                  <div>© 2025 哈根良野股份有限公司</div>
                 </div>
               )
             }

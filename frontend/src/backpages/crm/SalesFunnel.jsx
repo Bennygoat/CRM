@@ -4,7 +4,7 @@ import { PlusOutlined } from "@ant-design/icons";
 import axios from "../../api/axiosBackend";
 import CRMOpportunityForm from "./CRMOpportunityForm";
 import SalesFunnelBoard from "../../backcomponents/crm/SalesFunnelBoard.jsx";
-import ContractGenerator from "../../backcomponents/crm/ContractGenerator.jsx"; // 假設這是合約生成器組件
+import ContractGenerator from "../../backcomponents/crm/ContractGenerator.jsx";
 
 export default function SalesFunnel() {
   const [columns, setColumns] = useState({});

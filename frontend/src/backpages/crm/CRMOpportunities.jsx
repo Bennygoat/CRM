@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined, InfoCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { ProTable, TableDropdown } from '@ant-design/pro-components';
 import {
   Button,
@@ -13,6 +13,8 @@ import {
   DatePicker,
   Select,
   message,
+  Space,
+  Popconfirm,
 } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import axios from '../../api/axiosBackend';
@@ -27,6 +29,14 @@ const stageMap = {
   '談判': 'NEGOTIATION',
   '已成交': 'CLOSED_WON',
   '已丟失': 'CLOSED_LOST',
+};
+const stageStyleConfig = {
+  '初步接洽': { color: 'blue', text: '初步接洽' },
+  '需求分析': { color: 'purple', text: '需求分析' },
+  '提案': { color: 'orange', text: '提案' },
+  '談判': { color: 'red', text: '談判' },
+  '已成交': { color: 'green', text: '已成交' },
+  '已丟失': { color: 'default', text: '已丟失' },
 };
 const reverseStageMap = Object.fromEntries(
   Object.entries(stageMap).map(([k, v]) => [v, k])
@@ -80,15 +90,24 @@ const CRMOpportunities = () => {
     }
   };
 
-  const openEdit = () => {
-    form.setFieldsValue({
-      opportunityName: selectedOpportunity.opportunityName,
-      description: selectedOpportunity.description,
-      expectedValue: selectedOpportunity.expectedValue,
-      closeDate: dayjs(selectedOpportunity.closeDate),
-      stage: selectedOpportunity.stage,
-    });
-    setEditVisible(true);
+const handleEdit = async (id) => {
+    try {
+      const res = await axios.get(`/opportunities/${id}`);
+      const opportunityData = res.data;
+      setSelectedOpportunity(opportunityData);
+
+      form.setFieldsValue({
+        opportunityName: opportunityData.opportunityName,
+        description: opportunityData.description,
+        expectedValue: opportunityData.expectedValue,
+        closeDate: dayjs(opportunityData.closeDate),
+        stage: reverseStageMap[opportunityData.stage] || opportunityData.stage,
+      });
+      setEditVisible(true);
+    } catch (err) {
+      console.error("取得商機資料失敗", err);
+      message.error("無法取得資料");
+    }
   };
 
   const handleUpdate = async (values) => {
@@ -147,9 +166,11 @@ const CRMOpportunities = () => {
         CLOSED_WON: { text: '已成交', status: 'Success' },
         CLOSED_LOST: { text: '已丟失', status: 'Error' },
       },
-      render: (_, record) => (
-        <Tag>{reverseStageMap[record.stage] || record.stage}</Tag>
-      ),
+       render: (_, record) => {
+              const stageKey = reverseStageMap[record.stage] || record.stage;
+              const style = stageStyleConfig[stageKey] || { color: 'default', text: stageKey };
+              return <Tag color={style.color}>{style.text}</Tag>;
+            },
     },
     {
       title: '預計成交日',
@@ -167,17 +188,51 @@ const CRMOpportunities = () => {
       title: '操作',
       valueType: 'option',
       key: 'option',
-      render: (_, record) => [
-        <a key="edit" onClick={() => fetchDetail(record.opportunityId)}>編輯</a>,
-        <TableDropdown
-          key="dropdown"
-          menus={[
-            { key: 'delete', name: '刪除' },
-          ]}
-        />,
-      ],
-    },
-  ];
+      render: (_, record) => (
+              <Space size="small">
+                <Button
+                  type="primary"
+                  ghost
+                  shape="circle"
+                  icon={<InfoCircleOutlined />}
+                  title="查看詳情"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fetchDetail(record.opportunityId);
+                  }}
+                />
+                <Button
+                   shape="circle"
+                   icon={<EditOutlined />}
+                   style={{ color: '#faad14', borderColor: '#faad14' }}
+                   title="編輯商機"
+                   onClick={(e) => {
+                       e.stopPropagation();
+                       handleEdit(record.opportunityId);
+                   }}
+                />
+                <Popconfirm
+                   title="確定要刪除這個商機嗎？"
+                   onConfirm={(e) => {
+                       e.stopPropagation();
+                       handleDelete(record.opportunityId);
+                   }}
+                   onCancel={(e) => e.stopPropagation()}
+                   okText="確定"
+                   cancelText="取消"
+                >
+                 <Button
+                    danger
+                    shape="circle"
+                    icon={<DeleteOutlined />}
+                    title="刪除商機"
+                    onClick={(e) => e.stopPropagation()}
+                 />
+               </Popconfirm>
+               </Space>
+                      ),
+                    },
+                  ];
 
   return (
     <div className="bg-white px-2">
@@ -234,7 +289,6 @@ const CRMOpportunities = () => {
         open={detailVisible}
         onCancel={() => setDetailVisible(false)}
         footer={[
-          <Button key="edit" onClick={openEdit}>編輯</Button>,
           <Button key="close" onClick={() => setDetailVisible(false)}>關閉</Button>,
         ]}
       >

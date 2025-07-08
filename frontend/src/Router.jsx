@@ -24,6 +24,7 @@ import useBackUserStore from "./stores/useBackUserStore";
 import "antd/dist/reset.css";
 import BackLogin from "./backpages/BackLogin.jsx";
 //CRM相關頁面
+import MainDashboardPage from "./backpages/crm/MainDashboardPage.jsx";
 import CRMCustomer from "./backpages/crm/CRMCustomer.jsx";
 import CRMDashboard from "./backpages/crm/CRMDashboard.jsx";
 import SalesFunnel from "./backpages/crm/SalesFunnel.jsx";
@@ -43,6 +44,8 @@ import ERPReturns from "./backpages/erp/ERPReturns.jsx";
 import Finance from "./backpages/erp/Finance.jsx";
 import Inventory from "./backpages/erp/Inventory.jsx";
 import Sales from "./backpages/erp/Sales.jsx";
+// //OM相關頁面
+// import OMPage from "./backpages/om/OMPage.jsx";
 // 使用者角色和權限
 import UsersManage from "./backpages/users/usersManage.jsx";
 import UsersLogs from "./backpages/users/usersLogs.jsx";
@@ -91,6 +94,11 @@ const router = createBrowserRouter([
         <FunnyError />
       ),
     children: [
+
+       {
+               index: true,
+               element: <MainDashboardPage />,
+             },
       {
         path: "dashboard",
         element: <CRMDashboard />,
@@ -125,6 +133,7 @@ const router = createBrowserRouter([
       },
     ],
   },
+
   {
     path: "/erp/*",
     element: ["admin", "manager"].includes(role) ? (
