@@ -18,14 +18,15 @@ const UsersMessage = () => {
   const fetchMessages = async (page = 1) => {
     setLoading(true);
     try {
-      const res = await axios.get("/customer/message/user/customer/58/list", {
+      const res = await axios.get("/customer/message/list", {
         params: {
-          page: page - 1,
+          page: page - 1, 
           size: PAGE_SIZE,
         },
       });
 
-      setMessages(res.data || []);
+      // 假設 res.data = { content: [...], totalElements: 50 }
+      setMessages(res.data.content || []);
       setTotal(res.data.totalElements || 0);
     } catch (error) {
       console.error("客服訊息取得失敗:", error);
@@ -64,22 +65,19 @@ const UsersMessage = () => {
       title: "建立時間",
       dataIndex: "createdAt",
       valueType: "dateTime",
-      render: (_, record) =>
-        dayjs(record.createdAt).format("YYYY-MM-DD HH:mm"),
     },
     {
       title: "最後回覆時間",
       dataIndex: "lastReplyTime",
       valueType: "dateTime",
-      render: (_, record) =>
-        dayjs(record.lastReplyTime).format("YYYY-MM-DD HH:mm"),
     },
     {
       title: "最後回覆內容",
       dataIndex: "lastReplyContent",
       search: false,
-      render: (_, record) =>
-        record.lastReplyContent ? record.lastReplyContent : "（無回覆）",
+      render: (_, record) => (
+        <span>{record.lastReplyContent || "（無回覆）"}</span>
+      ),
     },
   ];
 

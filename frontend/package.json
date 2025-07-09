@@ -20,6 +20,8 @@
     "axios": "^1.10.0",
     "axios-mock-adapter": "^2.1.0",
     "dayjs": "^1.11.13",
+    "firebase": "^11.10.0",
+    "framer-motion": "^12.23.0",
     "jspdf": "^3.0.1",
     "react": "^19.1.0",
     "react-countup": "^6.5.3",

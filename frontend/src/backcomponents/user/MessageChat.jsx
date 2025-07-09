@@ -1,98 +1,106 @@
-import React, { useEffect, useState } from 'react';
-import { Button, Input, message } from 'antd';
+import React, { useEffect, useState, useRef } from 'react';
+import { Button, Input, message as antdMessage } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
-import dayjs from 'dayjs';
+import axiosInstance from '../../api/axiosBackend';
 import clsx from 'clsx';
-
-const mockConversation = [
-  {
-    id: 1,
-    sender: 'user', // 客戶
-    content: '你好，我忘記密碼了，該怎麼辦？',
-    timestamp: dayjs().subtract(2, 'day').toISOString(),
-  },
-  {
-    id: 2,
-    sender: 'agent', // 客服
-    content: '您好，請點選登入頁的「忘記密碼」連結進行重設。',
-    timestamp: dayjs().subtract(2, 'day').add(1, 'hour').toISOString(),
-  },
-  {
-    id: 3,
-    sender: 'user',
-    content: '我已經重設完成了，謝謝！',
-    timestamp: dayjs().subtract(1, 'day').toISOString(),
-  },
-];
 
 const MessageChat = () => {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const navigate = useNavigate();
   const { messageId } = useParams();
+  const chatEndRef = useRef(null);
+
+  const fetchMessages = async () => {
+    try {
+      const res = await axiosInstance.get(`/customer/message/${messageId}/replies`);
+      console.log('取得對話成功:', res.data);
+      const formatted = res.data.map((reply) => ({
+        id: reply.replyId,
+        sender: reply.senderType === 'CUSTOMER' ? 'user' : 'agent',
+        senderName: reply.senderName,
+        content: reply.content,
+      }));
+      setMessages(formatted);
+      scrollToBottom();
+    } catch (err) {
+      console.error('取得對話失敗:', err);
+      antdMessage.error('無法取得對話資料');
+    }
+  };
+
+  const scrollToBottom = () => {
+    setTimeout(() => {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
 
   useEffect(() => {
-    setMessages(mockConversation);
+    fetchMessages();
   }, [messageId]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputValue.trim()) return;
-    const newMessage = {
-      id: Date.now(),
-      sender: 'agent', // 後台發送的訊息是客服
-      content: inputValue,
-      timestamp: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, newMessage]);
-    setInputValue('');
-    message.success('已發送給客戶');
+
+    try {
+      await axiosInstance.post(
+        `/customer/message/${messageId}/reply/user`,
+        { content: inputValue.trim() }
+      );
+      antdMessage.success('已發送給客戶');
+      setInputValue('');
+      fetchMessages();
+    } catch (err) {
+      console.error('發送訊息失敗:', err);
+      antdMessage.error('發送失敗');
+    }
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-6">
-      <Button
-        icon={<ArrowLeftOutlined />}
-        onClick={() => navigate(-1)}
-        className="mb-4"
-      >
-        返回訊息列表
-      </Button>
+    <div className="w-full px-8 py-6">
+      {/* 標題與返回按鈕 */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-semibold">與客戶對話</h2>
+        <Button
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate(-1)}
+          className="flex items-center"
+        >
+          返回訊息列表
+        </Button>
+      </div>
 
-      <h2 className="text-xl font-semibold mb-4">與客戶對話</h2>
-
-      <div className="border p-6 rounded-lg h-[600px] overflow-y-auto bg-gray-50 mb-6 shadow-sm">
+      {/* 聊天區 */}
+      <div className="border rounded-lg p-6 h-[70vh] overflow-y-auto bg-white shadow">
         {messages.map((msg) => (
           <div
             key={msg.id}
             className={clsx(
-              'mb-3 flex',
+              'mb-4 flex',
               msg.sender === 'agent' ? 'justify-end' : 'justify-start'
             )}
           >
             <div
               className={clsx(
-                'px-4 py-2 rounded-lg max-w-[70%] text-sm break-words',
+                'px-4 py-3 rounded-2xl max-w-[60%] text-sm break-words shadow',
                 msg.sender === 'agent'
                   ? 'bg-blue-500 text-white'
-                  : 'bg-gray-200 text-black'
+                  : 'bg-gray-100 text-gray-800'
               )}
             >
-              <div>{msg.content}</div>
-              <div
-                className={clsx(
-                  'text-[10px] text-right mt-1',
-                  msg.sender === 'agent' ? 'text-white/80' : 'text-gray-500'
-                )}
-              >
-                {dayjs(msg.timestamp).format('YYYY-MM-DD HH:mm')}
+              <div className="font-medium mb-1">
+                {msg.sender === 'agent' ? '客服' : msg.senderName}
               </div>
+              <div>{msg.content}</div>
             </div>
           </div>
         ))}
+        <div ref={chatEndRef} />
       </div>
 
-      <div className="flex gap-2">
+      {/* 輸入區 */}
+      <div className="flex gap-3 mt-4">
         <Input.TextArea
           className="flex-1"
           value={inputValue}

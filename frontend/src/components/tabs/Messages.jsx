@@ -1,90 +1,166 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
+import axiosInstance from '../../api/axiosFrontend';
+import dayjs from 'dayjs';
+import MessagesForm from './MessageForm';
 
 function Messages() {
-  const [input, setInput] = useState('');
-  const [messages, setMessages] = useState([
-    { type: 'bot', text: '您好，請問需要什麼協助？' },
-  ]);
-  const messagesEndRef = useRef(null);
+  const [messages, setMessages] = useState([]);
+  const [selectedMessageId, setSelectedMessageId] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newContent, setNewContent] = useState('');
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-
-    const newMessage = { type: 'user', text: input.trim() };
-    setMessages((prev) => [...prev, newMessage]);
-
-    simulateBotReply(input.trim());
-    setInput('');
+  const fetchMessages = async () => {
+    try {
+      const res = await axiosInstance.get('/customer/message/list');
+      console.log('取得客服訊息成功:', res.data);
+      setMessages(res.data);
+    } catch (err) {
+      console.error('取得客服訊息失敗:', err);
+    }
   };
 
-  const simulateBotReply = (userText) => {
-    setTimeout(() => {
-      const reply = getBotReply(userText);
-      setMessages((prev) => [...prev, { type: 'bot', text: reply }]);
-    }, 1000);
-  };
-
-  const getBotReply = (text) => {
-    const lower = text.toLowerCase();
-    if (lower.includes('忘記') && lower.includes('密碼'))
-      return '您可以透過登入頁的「忘記密碼」連結進行密碼重設。';
-    if (lower.includes('訂單'))
-      return '請提供訂單編號，我們將盡快為您查詢。';
-    if (lower.includes('退貨'))
-      return '退貨流程請至「會員中心 > 訂單管理」中申請退貨。';
-    if (lower.includes('發票'))
-      return '發票將於出貨後三日內寄送至您註冊的電子信箱。';
-    return '我們已收到您的訊息，稍後由客服人員回覆您。';
-  };
-
-  // 滾動到底部
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    fetchMessages();
+  }, []);
+
+  const convertResolvedStatus = (isResolved) => {
+    return isResolved ? '已解決' : '未解決';
+  };
+
+  const handleCreateMessage = async () => {
+    if (!newTitle.trim() || !newContent.trim()) {
+      alert('請輸入標題和內容');
+      return;
+    }
+
+    try {
+      const res = await axiosInstance.post('/customer/message/create', {
+        questionTitle: newTitle.trim(),
+        content: newContent.trim(),
+      });
+      console.log('新增問題成功:', res.data);
+      setShowCreateModal(false);
+      setNewTitle('');
+      setNewContent('');
+
+      // 自動切換到剛新增的對話
+      const newMessageId = res.data.messageId;
+      if (newMessageId) {
+        setSelectedMessageId(newMessageId);
+      } else {
+        fetchMessages();
+      }
+    } catch (err) {
+      console.error('新增問題失敗:', err);
+    }
+  };
+
+  const handleBackToList = () => {
+    setSelectedMessageId(null);
+    fetchMessages();
+  };
+
+  if (selectedMessageId) {
+    return (
+      <MessagesForm
+        messageId={selectedMessageId}
+        onBack={handleBackToList}
+      />
+    );
+  }
 
   return (
-    <div className="space-y-4 text-sm max-w-5xl mx-auto p-4">
-      <h2 className="text-base font-bold text-gray-800">與客服訊息</h2>
-
-      {/* 訊息列表 */}
-      <div className="h-[400px] overflow-y-auto border border-gray-200 rounded p-4 bg-white space-y-3">
-        {messages.map((msg, idx) => (
-          <div
-            key={idx}
-            className={`flex ${
-              msg.type === 'user' ? 'justify-end' : 'justify-start'
-            }`}
-          >
-            <div
-              className={`max-w-[70%] p-3 rounded-lg ${
-                msg.type === 'user'
-                  ? 'bg-blue-100 text-right'
-                  : 'bg-gray-100 text-left'
-              }`}
-            >
-              {msg.text && <p className="text-gray-800">{msg.text}</p>}
-            </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* 輸入區 */}
-      <div className="flex flex-col md:flex-row items-start md:items-end gap-2">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="輸入訊息..."
-          className="flex-1 border border-gray-300 rounded px-3 py-2 w-full"
-        />
+    <div className="text-sm space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-base font-bold text-gray-800">客服訊息紀錄</h2>
         <button
-          onClick={handleSend}
-          className="px-4 py-2 bg-logo-blue text-white rounded hover:bg-sky-600"
+          onClick={() => setShowCreateModal(true)}
+          className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm"
         >
-          傳送
+          新增問題
         </button>
       </div>
+
+      {/* 訊息列表 */}
+      <div className="overflow-x-auto">
+        <table className="w-full table-auto border-t border-gray-300 text-left">
+          <thead className="text-gray-600 border-b border-gray-200">
+            <tr>
+              <th className="py-2 px-4 font-semibold w-1/5">問題標題</th>
+              <th className="py-2 px-4 font-semibold w-1/5">建立時間</th>
+              <th className="py-2 px-4 font-semibold w-1/5">最後回覆</th>
+              <th className="py-2 px-4 font-semibold w-1/5">狀態</th>
+              <th className="py-2 px-4 font-semibold w-1/5">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {messages.map((msg) => (
+              <tr key={msg.messageId} className="border-b border-gray-100">
+                <td className="py-3 px-4 text-gray-800 w-1/5">{msg.questionTitle}</td>
+                <td className="py-3 px-4 text-gray-700 w-1/5">
+                  {dayjs(msg.createdAt).format('YYYY-MM-DD HH:mm')}
+                </td>
+                <td className="py-3 px-4 text-gray-700 w-1/5">{msg.lastReplyContent}</td>
+                <td className="py-3 px-4 text-gray-700 w-1/5">
+                  {convertResolvedStatus(msg.isResolved)}
+                </td>
+                <td className="py-3 px-4 w-1/5">
+                  <button
+                    onClick={() => setSelectedMessageId(msg.messageId)}
+                    className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600"
+                  >
+                    查看對話
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* 新增問題 Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-md w-full max-w-md shadow-lg space-y-4">
+            <h3 className="text-lg font-bold">新增問題</h3>
+            <div>
+              <label className="block text-sm font-medium mb-1">問題標題</label>
+              <input
+                type="text"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="輸入問題標題"
+                className="w-full border border-gray-300 rounded px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">內容</label>
+              <textarea
+                value={newContent}
+                onChange={(e) => setNewContent(e.target.value)}
+                placeholder="描述您的問題..."
+                className="w-full border border-gray-300 rounded px-3 py-2"
+                rows={3}
+              ></textarea>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleCreateMessage}
+                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+              >
+                送出
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

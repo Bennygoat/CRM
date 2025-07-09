@@ -35,6 +35,6 @@ export const handlers = [
   ...userLogsHandler,
   // ...backLoginHandlers,
   ...cmsproductdetailhandlers,
-  ...usersMessagehandlers,
+  // ...usersMessagehandlers,
 
 ];

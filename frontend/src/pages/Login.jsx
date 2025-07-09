@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
-import { FaEye, FaEyeSlash, FaFacebook } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaFacebook, FaGoogle } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
+import { auth, googleProvider, facebookProvider } from "../firebase";
+import { signInWithPopup } from "firebase/auth";
 import useUserStore from "../stores/userStore";
+import axios from "../api/axiosFrontend";
 
 function Login() {
   const [account, setAccount] = useState("");
@@ -23,11 +26,114 @@ function Login() {
     e.preventDefault();
     setError(null);
 
-    try {     
+    try {
       await login({ account, password });
       navigate("/User");
     } catch (err) {
       setError("登入失敗，請確認帳號密碼");
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError(null);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+
+      console.log("Google 登入成功:", user);
+
+      const payload = {
+        email: user.email,
+        account: user.email,
+        customerName: user.displayName || "Google使用者",
+        password: user.uid + "@G",
+      };
+
+      try {
+        await login({ account: user.email, password: user.uid + "@G" });
+        navigate("/User");
+      } catch (err) {
+        const errorMessage =
+          typeof err === "string"
+            ? err // 後端直接回錯誤字串
+            : err.response?.data?.message || err.message || "未知錯誤";
+
+        console.error("登入失敗:", errorMessage);
+
+        if (
+          errorMessage.toLowerCase().includes("帳號") &&
+          errorMessage.toLowerCase().includes("密碼")
+        ) {
+          console.log("檢測到帳號密碼錯誤，自動註冊...");
+
+          try {
+            const response = await axios.post("/customer/register", payload);
+            console.log("註冊成功:", response.data);
+
+            await login({ account: user.email, password: user.uid + "@G" });
+            navigate("/User");
+          } catch (registerError) {
+            console.error(
+              "自動註冊失敗:",
+              registerError.response?.data || registerError.message
+            );
+            setError("自動註冊失敗，請稍後再試");
+          }
+        } else {
+          setError("Google 登入失敗，請稍後再試");
+        }
+      }
+    } catch (err) {
+      console.error("Google 登入失敗 (Firebase):", err);
+      setError("Google 登入失敗，請稍後再試");
+    }
+  };
+
+  const handleFacebookLogin = async () => {
+    setError(null);
+    try {
+      const result = await signInWithPopup(auth, facebookProvider);
+      const user = result.user;
+
+      console.log("Facebook 登入成功:", user);
+
+      const payload = {
+        email: user.email,
+        account: user.email,
+        customerName: user.displayName || "Facebook使用者",
+        password: user.uid,
+      };
+
+      try {
+        await login({ account: user.email, password: user.uid });
+        navigate("/User");
+      } catch (err) {
+        const errorMessage = err.response?.data?.message || "";
+        console.error("登入失敗:", errorMessage);
+
+        if (errorMessage.includes("帳號密碼錯誤")) {
+          console.log("帳號不存在，自動註冊...");
+
+          try {
+            const response = await axios.post("/customer/register", payload);
+            console.log("註冊成功:", response.data);
+
+            await login({ account: user.email, password: user.uid });
+            navigate("/User");
+          } catch (registerError) {
+            console.error(
+              "自動註冊失敗:",
+              registerError.response?.data || registerError.message
+            );
+            setError("自動註冊失敗，請稍後再試");
+          }
+        } else {
+          setError("Facebook 登入失敗，請稍後再試");
+        }
+      }
+    } catch (err) {
+      console.error("Facebook 登入失敗 (Firebase):", err);
+      setError("Facebook 登入失敗，請稍後再試");
     }
   };
 
@@ -66,7 +172,9 @@ function Login() {
 
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-        <div className="mb-4 text-sm text-blue-600 cursor-pointer">忘記密碼？</div>
+        <div className="mb-4 text-sm text-blue-600 cursor-pointer">
+          忘記密碼？
+        </div>
 
         <button
           type="submit"
@@ -75,6 +183,26 @@ function Login() {
           開始購物吧！
         </button>
       </form>
+
+      <div className="my-6 flex justify-center gap-6">
+        <button
+          onClick={handleGoogleLogin}
+          className="bg-red-500 hover:bg-red-600 text-white p-3 rounded-full"
+          title="使用 Google 登入"
+          type="button"
+        >
+          <FaGoogle className="text-xl" />
+        </button>
+
+        <button
+          onClick={handleFacebookLogin}
+          className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full"
+          title="使用 Facebook 登入"
+          type="button"
+        >
+          <FaFacebook className="text-xl" />
+        </button>
+      </div>
 
       <div className="text-center mt-10">
         <p className="text-lg font-bold">還不是會員？</p>
