@@ -45,7 +45,10 @@ import Finance from "./backpages/erp/Finance.jsx";
 import Inventory from "./backpages/erp/Inventory.jsx";
 import Sales from "./backpages/erp/Sales.jsx";
 // //OM相關頁面
-// import OMPage from "./backpages/om/OMPage.jsx";
+import OMMainPage from "./backpages/om/OMMainPage.jsx"
+import omConfig from "./configs/omConfig.jsx"
+import FlowchartDashboard from "./backpages/om/FlowchartDashboard.jsx"
+import OMCalendar from "./backpages/om/OMCalendar.jsx"
 // 使用者角色和權限
 import UsersManage from "./backpages/users/usersManage.jsx";
 import UsersLogs from "./backpages/users/usersLogs.jsx";
@@ -181,6 +184,42 @@ const router = createBrowserRouter([
       },
     ],
   },
+  {
+      path: "/om/*",
+      element:
+        role === "admin" ? (
+          <BaseLayout menuConfig={omConfig} appListConfig={filteredAppList} />
+        ) : (
+          <FunnyError />
+        ),
+      children: [
+
+         {
+                 index: true,
+                 element: <OMMainPage />,
+               },
+        {
+            path: 'dashboard',
+            name: '流程圖',
+            element: <FlowchartDashboard />,
+        },
+        {
+            path: "calendar",
+            name: '行事曆',
+            element: <OMCalendar />,
+        },
+//         {
+//             path: 'orders',
+//             name: '訂單管理',
+//             icon: <ShoppingCartOutlined />,
+//         },
+//         {
+//             path: 'coupon',
+//             name: '優惠卷管理',
+//             icon: <CarOutlined />,
+//         },
+      ],
+    },
   {
     path: "/users/*",
     element:
