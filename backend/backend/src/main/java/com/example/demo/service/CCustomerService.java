@@ -187,6 +187,11 @@ public class CCustomerService {
             String email = decodedToken.getEmail();
             String name = decodedToken.getName();
 
+            // ✅ 輸出 token 資訊
+            System.out.println("[Firebase] Email: " + email);
+            System.out.println("[Firebase] Name: " + name);
+            System.out.println("[Firebase] Picture: " + uid);
+
             Optional<CCustomer> customerOpt = cCustomerRepo.findByAccount(email);
 
             CCustomer customer;
@@ -221,6 +226,7 @@ public class CCustomerService {
                     .build();
 
         } catch (FirebaseAuthException e) {
+            e.printStackTrace();
             throw new RuntimeException("Firebase 驗證失敗", e);
         }
     }

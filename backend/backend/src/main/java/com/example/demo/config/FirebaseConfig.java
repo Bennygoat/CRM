@@ -18,6 +18,7 @@ public class FirebaseConfig {
         try {
             InputStream serviceAccount = getClass().getClassLoader().getResourceAsStream("firebase-adminsdk.json");
 
+            System.out.println("[Firebase Init] config.json stream is null? " + (serviceAccount == null));
 
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
