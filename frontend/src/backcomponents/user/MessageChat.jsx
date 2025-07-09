@@ -59,18 +59,7 @@ const MessageChat = () => {
 
   return (
     <div className="w-full px-8 py-6">
-      {/* 標題與返回按鈕 */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold">與客戶對話</h2>
-        <Button
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate(-1)}
-          className="flex items-center"
-        >
-          返回訊息列表
-        </Button>
-      </div>
-
+      
       {/* 聊天區 */}
       <div className="border rounded-lg p-6 h-[70vh] overflow-y-auto bg-white shadow">
         {messages.map((msg) => (
