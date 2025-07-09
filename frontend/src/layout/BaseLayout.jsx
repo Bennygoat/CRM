@@ -79,9 +79,7 @@ export default function BaseLayout({ menuConfig, appListConfig }) {
             siderMenuType="sub"
             menu={{ collapsedShowGroupTitle: true }}
             avatarProps={{
-              // https://cdn-icons-png.flaticon.com/512/5069/5069643.png
-              // https://cdn-icons-png.flaticon.com/512/126/126472.png
-              src: "https://cdn-icons-png.flaticon.com/512/126/126472.png",
+              src: "https://gw.alipayobjects.com/zos/antfincdn/efFD%24IOql2/weixintupian_20170331104822.jpg",
               size: "small",
               title: "系統設定",
               render: (props, dom) => (
@@ -115,9 +113,9 @@ export default function BaseLayout({ menuConfig, appListConfig }) {
             }}
             menuFooterRender={(props) =>
               props?.collapsed ? undefined : (
-                <div style={{ textAlign: "center", paddingTop: 0 }}>
-                  {/* <div>2025 © 哈根良野有限公司</div> */}
-                  
+                <div style={{ textAlign: "center", paddingTop: 12 }}>
+                  <div>© 2025 Made with Gchen</div>
+                  <div> Ant Design</div>
                 </div>
               )
             }

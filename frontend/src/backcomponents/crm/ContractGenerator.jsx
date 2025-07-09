@@ -10,20 +10,18 @@ const ContractGenerator = ({ influencerName = "王小明", onFinish }) => {
       format: "A4",
     });
 
-    // ✅ 正確註冊中文字型
     doc.addFileToVFS("NotoSansTC-Regular.ttf", font);
     doc.addFont("NotoSansTC-Regular.ttf", "custom", "normal");
     doc.setFont("custom");
 
     const content = `
-網紅行銷合作合約書
+                   冰品創意吃法短影音合作合約書
 
-立約人：
 甲方：心邦股份有限公司
 統一編號：55646980
 地址：彰化縣北斗鎮大新里斗中路103號
 
-乙方：${influencerName}
+乙方：網紅科技媒體
 
 第一條：合作目的與期間
 目的：甲方委託乙方透過其經營之社群平台，為「哈根良野」進行宣傳推廣。
@@ -40,11 +38,13 @@ const ContractGenerator = ({ influencerName = "王小明", onFinish }) => {
 第三條：合作費用與支付
 總費用：新台幣 30,000 元整
 支付：發布後 15 日內轉帳，須提供發票
-銀行：台灣銀行 北斗分行
-戶名：${influencerName}
-帳號：123456789
+銀行：中國信託商業銀行(822) 屏東分行(1207)
+戶名：心邦股份有限公司
+帳號：207540470346
 
-（略）
+
+
+
 
 甲方簽名：________________
 乙方簽名：________________
@@ -54,7 +54,6 @@ const ContractGenerator = ({ influencerName = "王小明", onFinish }) => {
     const lines = doc.splitTextToSize(content, 180);
     doc.text(lines, 15, 20);
 
-    // 🟢 根據乙方姓名命名檔案
     const fileName = `${influencerName}_合作合約書.pdf`;
     doc.save(fileName);
 
@@ -63,11 +62,10 @@ const ContractGenerator = ({ influencerName = "王小明", onFinish }) => {
     }
   };
 
-  // ✅ 正確 return 放在 generatePDF 外層
   return (
     <div className="p-4 space-y-4">
       <h2 className="text-xl font-bold">合約確認</h2>
-      <p>乙方名稱：{influencerName}</p>
+      <p>冰品創意吃法短影音合作合約書</p>
       <button
         onClick={generatePDF}
         className="px-4 py-2 bg-blue-600 text-white rounded"

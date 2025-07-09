@@ -3,6 +3,10 @@ import { BarChartOutlined,
   AppstoreOutlined,
   RobotOutlined,
   DesktopOutlined,
+  CalendarOutlined,
+  TeamOutlined,
+  LineChartOutlined,
+  FunnelPlotOutlined,
  } from '@ant-design/icons';
  import { useNavigate } from 'react-router-dom';
 
@@ -19,27 +23,27 @@ const crmConfig = {
       {
         path: '/crm/calender',
         name: '行事曆',
-        icon: <BarChartOutlined />,
+        icon: <CalendarOutlined />,
       },
       {
         path: '/crm/company',
         name: '客戶資料',
-        icon: <BarChartOutlined />,
+        icon: <TeamOutlined />,
       },
       {
         path: '/crm/customer',
         name: '聯絡人資料',
-        icon: <BarChartOutlined />,
+        icon: <UserOutlined />,
       },
       {
         path: '/crm/opportunity',
         name: '商機管理',
-        icon: <BarChartOutlined />,
+        icon: <AppstoreOutlined />,
       },
       {
         path: '/crm/salesfunnel',
         name: '銷售漏斗',
-        icon: <BarChartOutlined />,
+        icon: <FunnelPlotOutlined />,
       },
     ],
   },

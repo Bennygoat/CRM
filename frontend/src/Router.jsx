@@ -25,6 +25,7 @@ import useBackUserStore from "./stores/useBackUserStore";
 import "antd/dist/reset.css";
 import BackLogin from "./backpages/BackLogin.jsx";
 //CRM相關頁面
+import MainDashboardPage from "./backpages/crm/MainDashboardPage.jsx";
 import CRMCustomer from "./backpages/crm/CRMCustomer.jsx";
 import CRMDashboard from "./backpages/crm/CRMDashboard.jsx";
 import SalesFunnel from "./backpages/crm/SalesFunnel.jsx";
@@ -40,6 +41,15 @@ import ERPStockLevels from "./backpages/erp/ERPStockLevels.jsx";
 import ERPPurchaseOrders from "./backpages/erp/ERPPurchaseOrders.jsx";
 import ERPCustomers from "./backpages/erp/ERPCustomers.jsx";
 import ERPDashboard from "./backpages/erp/ERPDashboard.jsx";
+import ERPReturns from "./backpages/erp/ERPReturns.jsx";
+import Finance from "./backpages/erp/Finance.jsx";
+import Inventory from "./backpages/erp/Inventory.jsx";
+import Sales from "./backpages/erp/Sales.jsx";
+// //OM相關頁面
+import OMMainPage from "./backpages/om/OMMainPage.jsx"
+import omConfig from "./configs/omConfig.jsx"
+import FlowchartDashboard from "./backpages/om/FlowchartDashboard.jsx"
+import OMCalendar from "./backpages/om/OMCalendar.jsx"
 import ERPOrderForm from "./backpages/erp/ERPOrderForm.jsx";
 import ERPNewOrderForm from "./backpages/erp/ERPNewOrderForm.jsx";
 // 使用者角色和權限
@@ -74,7 +84,7 @@ const router = createBrowserRouter([
       { path: "funnyerror", element: <FunnyError /> },
       { path: "user", element: <User /> },
       { path: "news/:id", element: <NewsDetail /> },
-      {path: "ecpay-redirect", element: <ECPayRedirect />}, 
+      {path: "ecpay-redirect", element: <ECPayRedirect />},
     ],
   },
   {path: "/backlogin", element: <BackLogin />}, // 後台登入頁面
@@ -95,6 +105,11 @@ const router = createBrowserRouter([
         <FunnyError />
       ),
     children: [
+
+       {
+               index: true,
+               element: <MainDashboardPage />,
+             },
       {
         path: "dashboard",
         element: <CRMDashboard />,
@@ -168,6 +183,42 @@ const router = createBrowserRouter([
       },
     ],
   },
+  {
+      path: "/om/*",
+      element:
+        role === "admin" ? (
+          <BaseLayout menuConfig={omConfig} appListConfig={filteredAppList} />
+        ) : (
+          <FunnyError />
+        ),
+      children: [
+
+         {
+                 index: true,
+                 element: <OMMainPage />,
+               },
+        {
+            path: 'dashboard',
+            name: '流程圖',
+            element: <FlowchartDashboard />,
+        },
+        {
+            path: "calendar",
+            name: '行事曆',
+            element: <OMCalendar />,
+        },
+//         {
+//             path: 'orders',
+//             name: '訂單管理',
+//             icon: <ShoppingCartOutlined />,
+//         },
+//         {
+//             path: 'coupon',
+//             name: '優惠卷管理',
+//             icon: <CarOutlined />,
+//         },
+      ],
+    },
   {
     path: "/users/*",
     element:

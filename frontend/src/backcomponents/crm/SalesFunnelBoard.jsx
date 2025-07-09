@@ -1,4 +1,3 @@
-// SalesFunnelBoard.jsx
 import React, { useState } from "react";
 import axios from "../../api/axiosBackend";
 import {
@@ -19,6 +18,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { FaStar, FaRegStar, FaClock, FaEdit } from "react-icons/fa";
 
+
 const visibleStages = ["INITIAL_CONTACT", "PROPOSAL", "NEGOTIATION", "CLOSED_WON"];
 const columnTitles = {
   INITIAL_CONTACT: "初步接洽",
@@ -27,7 +27,7 @@ const columnTitles = {
   CLOSED_WON: "成交"
 };
 
-export default function SalesFunnelBoard({ columns, setColumns, onCardDoubleClick,onContractGeneratedv}) {
+export default function SalesFunnelBoard({ columns, setColumns, onCardDoubleClick,onContractGenerated}) {
 
   const [overColumnId, setOverColumnId] = useState(null);
   const [activeCard, setActiveCard] = useState(null);
@@ -106,7 +106,7 @@ export default function SalesFunnelBoard({ columns, setColumns, onCardDoubleClic
         [targetColumn]: newTarget,
       });
 
-      if (targetColumn === "NEGOTIATION") {
+      if (targetColumn === "CLOSED_WON") {
         const opportunityId =
           activeItem?.opportunityId || activeItem?.id?.replace(/^c/, "");
         if (opportunityId) {
@@ -287,7 +287,7 @@ function SortableCard({
 
       {/* 星星評分 */}
       <div className="flex items-center text-sm text-gray-600">
-        {[...Array(3)].map((_, idx) =>
+        {[...Array(5)].map((_, idx) =>
           idx < currentRating ? (
             <FaStar
               key={idx}
