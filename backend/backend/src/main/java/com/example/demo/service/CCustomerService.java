@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.request.UpdateCCustomerProfileRequest;
+import com.example.demo.dto.response.CCustomerLoginResponse;
 import com.example.demo.dto.response.CCustomerProfileResponse;
 import com.example.demo.dto.response.CustomerCouponDto;
 import com.example.demo.entity.*;
@@ -13,6 +14,11 @@ import com.example.demo.repository.CCustomerRepo;
 import com.example.demo.repository.OrderRepository;
 import com.example.demo.repository.PasswordResetTokenRepo;
 import com.example.demo.repository.VIPLevelRepo;
+import com.example.demo.security.JwtTool;
+import com.example.demo.security.JwtUserPayload;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseToken;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -171,6 +177,58 @@ public class CCustomerService {
         }
 
         return loginCCustomer;
+    }
+
+    // firebase登入驗證
+    public CCustomerLoginResponse loginWithFirebase(String provider, String idToken) {
+        try {
+            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+            String uid = decodedToken.getUid();
+            String email = decodedToken.getEmail();
+            String name = decodedToken.getName();
+
+            // ✅ 輸出 token 資訊
+            System.out.println("[Firebase] Email: " + email);
+            System.out.println("[Firebase] Name: " + name);
+            System.out.println("[Firebase] Picture: " + uid);
+
+            Optional<CCustomer> customerOpt = cCustomerRepo.findByAccount(email);
+
+            CCustomer customer;
+
+            if (customerOpt.isEmpty()) {
+                customer = CCustomer.builder()
+                        .account(email)
+                        .customerName(name)
+                        .thirdPartyUid(uid)
+                        .createdAt(LocalDateTime.now())
+                        .password("third_party_placeholder")
+                        .birthday(null)
+                        .build();
+
+                cCustomerRepo.save(customer);
+            } else {
+                customer = customerOpt.get();
+            }
+
+            JwtUserPayload payload = JwtUserPayload.fromCustomer(customer);
+            String token = JwtTool.createToken(payload);
+
+            return CCustomerLoginResponse.builder()
+                    .token(token)
+                    .account(customer.getAccount())
+                    .customerName(customer.getCustomerName())
+                    .email(customer.getAccount()) // 用 account 當作 email（Firebase 不一定有 email 欄）
+//                    .address(customer.getCCustomerAddress().isEmpty() ? null : customer.getCCustomerAddress().get(0).getAddress())
+                    .birthday(customer.getBirthday())
+                    .createdAt(customer.getCreatedAt())
+                    .spending(customer.getSpending())
+                    .build();
+
+        } catch (FirebaseAuthException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Firebase 驗證失敗", e);
+        }
     }
 
     // 檢視顧客資料: 顯示用戶個人基本資訊（帳號、姓名、電話、地址等）資料查詢、權限驗證（只能看自己的資料）

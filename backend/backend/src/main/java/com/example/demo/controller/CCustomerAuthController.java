@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.request.FirebaseLoginRequest;
 import com.example.demo.dto.request.LoginRequest;
 import com.example.demo.dto.response.CCustomerLoginResponse;
 import com.example.demo.entity.CCustomer;
@@ -43,6 +44,14 @@ public class CCustomerAuthController {
                 .spending(cCustomer.getSpending())
                 .build();
         return ResponseEntity.ok(res);
+    }
+
+    @Operation(summary = "客戶登入firebase")
+    @PostMapping("/firebase-login")
+    public ResponseEntity<CCustomerLoginResponse> loginWithFirebase(@RequestBody FirebaseLoginRequest request) {
+        System.out.println("測試authcontroller:" + request.getProvider()); //有接收到token
+        System.out.println(request.getToken());
+        return ResponseEntity.ok(cCustomerService.loginWithFirebase(request.getProvider(), request.getToken()));
     }
 
     @Operation(summary = "測試 JWT 驗證")

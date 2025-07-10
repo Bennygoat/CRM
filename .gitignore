@@ -19,6 +19,7 @@
 /backend/.metadata/
 /backend/.idea/
 /backend/*.iml
+/backend/src/main/resources/firebase-adminsdk.json
 
 # === General IDE ===
 .idea/

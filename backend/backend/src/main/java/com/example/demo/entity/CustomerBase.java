@@ -81,8 +81,4 @@ public abstract class CustomerBase {
     public boolean isAvailable() {
         return this.isActive && !this.isDeleted;
     }
-
-
-
-
 }

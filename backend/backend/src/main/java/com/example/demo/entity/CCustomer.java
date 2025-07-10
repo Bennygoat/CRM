@@ -29,6 +29,9 @@ public class CCustomer extends CustomerBase {
     private LocalDateTime accessStartTime;
     private LocalDateTime accessEndTime;
 
+    @Column(name = "third_party_uid", unique = true)
+    private String thirdPartyUid;
+
 //    @Column(name = "is_active", nullable = false)
 //    @Builder.Default
 //    private boolean isActive = true;
