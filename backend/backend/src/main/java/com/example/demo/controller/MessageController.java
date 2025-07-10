@@ -120,4 +120,15 @@ public class MessageController {
         List<MessageResponse> messages = messageService.getMessagesByCustomer(customerId);
         return ResponseEntity.ok(messages);
     }
+
+    //客服可查所有客戶的留言清單
+    @CheckJwt
+    @CheckAuthority(AuthorityCode.CUSTOMER_SUPPORT)
+    @GetMapping("/user/list")
+    public ResponseEntity<List<MessageResponse>> getMessagesForAdmin(HttpServletRequest request){
+        String account = (String) request.getAttribute("account");
+
+        List<MessageResponse> messages = messageService.getAllMessagesForAdmin();
+        return ResponseEntity.ok(messages);
+    }
 }

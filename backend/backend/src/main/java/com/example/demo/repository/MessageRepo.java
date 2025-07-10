@@ -19,4 +19,7 @@ public interface MessageRepo extends JpaRepository<Message, Long> {
     @Query("SELECT m.cCustomer.account FROM Message m WHERE m.messageId = :messageId")
     Optional<String> findCustomerAccountByMessageId(@Param("messageId") Long messageId);
 
+    // 查詢問題清單
+    @Query("SELECT m FROM Message m JOIN FETCH m.cCustomer ORDER BY m.createdAt DESC")
+     List<Message> findAllMessagesWithCustomerInfo();
 }

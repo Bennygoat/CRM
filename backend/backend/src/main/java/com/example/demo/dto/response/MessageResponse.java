@@ -15,7 +15,13 @@ public class MessageResponse {
     private LocalDateTime createdAt;
     private Long customerId;
 
+    // --- NEW: Add customer specific fields for admin view ---
+    private String customerAccount;
+    private String customerName;
+    private String customerEmail;
+
     // 新增預覽用欄位
     private String lastReplyContent;
     private LocalDateTime lastReplyTime;
+    private String lastReplySenderType;
 }

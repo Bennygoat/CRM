@@ -16,6 +16,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -62,15 +63,19 @@ public class MessageService {
                 .build();
         messageReplyRepo.save(firstReply);
 
-        return new MessageResponse(
-                savedMessage.getMessageId(),
-                savedMessage.getQuestionTitle(),
-                savedMessage.getIsResolved(),
-                savedMessage.getCreatedAt(),
-                savedMessage.getCCustomer().getCustomerId(),
-                firstReply.getContent(),
-                firstReply.getSentAt()
-        );
+//        return new MessageResponse(
+//                savedMessage.getMessageId(),
+//                savedMessage.getQuestionTitle(),
+//                savedMessage.getIsResolved(),
+//                savedMessage.getCreatedAt(),
+//                savedMessage.getCCustomer().getCustomerId(),
+//                savedMessage.getCCustomer().getAccount(),
+//                savedMessage.getCCustomer().getCustomerName(),
+//                savedMessage.getCCustomer().getEmail(),
+//                firstReply.getContent(),
+//                firstReply.getSentAt()
+//        );
+        return toResponse(savedMessage);
     }
 
     // 查詢該顧客所有留言
@@ -87,17 +92,31 @@ public class MessageService {
     private MessageResponse toResponse(Message message) {
         MessageResponse resp = new MessageResponse();
         resp.setMessageId(message.getMessageId());
-        resp.setCustomerId(message.getCCustomer().getCustomerId());
         resp.setQuestionTitle(message.getQuestionTitle());
         resp.setCreatedAt(message.getCreatedAt());
         resp.setIsResolved(message.getIsResolved());
+//        resp.setCustomerId(message.getCCustomer().getCustomerId());
 
-        // 可以選擇只取最後一筆回覆當 summary（如果要）
+        // Populate customer-specific fields
+        if (message.getCCustomer() != null) {
+            resp.setCustomerId(message.getCCustomer().getCustomerId());
+            resp.setCustomerAccount(message.getCCustomer().getAccount());
+            resp.setCustomerName(message.getCCustomer().getCustomerName());
+            resp.setCustomerEmail(message.getCCustomer().getEmail()); // Populate email
+        }
+
+//         可以選擇只取最後一筆回覆當 summary（如果要）
         List<MessageReply> replies = message.getReplies();
         if (replies != null && !replies.isEmpty()) {
-            MessageReply lastReply = replies.get(replies.size() - 1);
-            resp.setLastReplyContent(lastReply.getContent());
-            resp.setLastReplyTime(lastReply.getSentAt());
+            // 找到最新的一條回覆
+            MessageReply lastReply = replies.stream()
+                    .max(Comparator.comparing(MessageReply::getSentAt))
+                    .orElse(null);
+            if (lastReply != null) {
+                resp.setLastReplyContent(lastReply.getContent());
+                resp.setLastReplyTime(lastReply.getSentAt());
+                resp.setLastReplySenderType(lastReply.getSenderType().name()); // 填充發送者類型
+            }
         }
 
         return resp;
@@ -123,6 +142,21 @@ public class MessageService {
         }
 
         return false;
+    }
+
+    // 查詢所有客戶問題的清單
+    public List<MessageResponse> getAllMessagesForAdmin() {
+        List<Message> messages = messageRepo.findAllMessagesWithCustomerInfo();
+        return messages.stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    // --- NEW METHOD: Mark Message as Resolved (Admin Action) ---
+    @Transactional
+    public void markMessageAsResolved(Long messageId) {
+        Message message = messageRepo.findById(messageId)
+                .orElseThrow(() -> new RuntimeException("找不到留言: " + messageId));
+        message.setIsResolved(true);
+        messageRepo.save(message);
     }
 
 }

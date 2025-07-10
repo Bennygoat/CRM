@@ -231,6 +231,18 @@ public class CCustomerService {
         }
     }
 
+    // 客戶清單
+    public List<CCustomer> getAllCustomers() {
+        // This will execute a "SELECT * FROM CCustomer" query
+        return cCustomerRepo.findAll();
+    }
+
+    // 客戶清單(有問題的)
+    public List<CCustomer> getAllCustomersWhereMsgExists() {
+        // This will execute a "SELECT * FROM CCustomer" query
+        return cCustomerRepo.findAll();
+    }
+
     // 檢視顧客資料: 顯示用戶個人基本資訊（帳號、姓名、電話、地址等）資料查詢、權限驗證（只能看自己的資料）
     public CCustomerProfileResponse getProfile(String account) {
         CCustomer customer = cCustomerRepo.findByAccount(account)
