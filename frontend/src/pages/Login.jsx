@@ -6,7 +6,6 @@ import { signInWithPopup } from "firebase/auth";
 import useUserStore from "../stores/userStore";
 import axios from "../api/axiosFrontend";
 
-
 function Login() {
   const [account, setAccount] = useState("");
   const [password, setPassword] = useState("");
@@ -16,53 +15,46 @@ function Login() {
 
   const login = useUserStore((state) => state.login);
   const isAuthenticated = useUserStore((state) => state.isAuthenticated);
+  const saveFirebaseLogin = useUserStore((state) => state.saveFirebaseLogin);
 
-// firebase新增
-const handleGoogleLogin = async () => {
-  try {
-    const result = await signInWithPopup(auth, googleProvider);
-    const user = result.user;
-    const idToken = await user.getIdToken();
-    console.log(idToken);
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const idToken = await user.getIdToken();
 
-    const response = await axios.post("/customer/auth/firebase-login", {
-      provider: "google",
-      token: idToken,
-    });
+      const response = await axios.post("/customer/auth/firebase-login", {
+        provider: "google",
+        token: idToken,
+      });
 
-    const { token, account, customerName } = response.data;
+      saveFirebaseLogin(response.data); // 使用新的儲存方法
+      navigate("/User");
+    } catch (err) {
+      console.error("Google 登入失敗", err);
+      setError("Google 登入失敗，請稍後再試");
+    }
+  };
 
-    login({ token, account, customerName }); // 存到你自己的 store
-    navigate("/User");
+  const handleFacebookLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, facebookProvider);
+      const user = result.user;
+      const idToken = await user.getIdToken();
 
-  } catch (err) {
-    console.error("Google 登入失敗", err);
-    setError("Google 登入失敗，請稍後再試");
-  }
-};
+      const response = await axios.post("/customer/auth/firebase-login", {
+        provider: "facebook",
+        token: idToken,
+      });
 
-const handleFacebookLogin = async () => {
-  try {
-    const result = await signInWithPopup(auth, facebookProvider);
-    const user = result.user;
-    const idToken = await user.getIdToken();
-
-    const response = await axios.post("/customer/auth/firebase-login", {
-      provider: "facebook",
-      token: idToken,
-    });
-
-    const { token, account, customerName } = response.data;
-
-    login({ token, account, customerName });
-    navigate("/User");
-
-  } catch (err) {
-    console.error("Facebook 登入失敗", err);
-    setError("Facebook 登入失敗，請稍後再試");
-  }
-};
-//
+      saveFirebaseLogin(response.data); // 使用新的儲存方法
+      navigate("/User");
+    } catch (err) {
+      console.error("Facebook 登入失敗", err);
+      setError("Facebook 登入失敗，請稍後再試");
+    }
+  };
+  //
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -81,9 +73,6 @@ const handleFacebookLogin = async () => {
       setError("登入失敗，請確認帳號密碼");
     }
   };
-
-
-  
 
   return (
     <div className="max-w-md mx-auto bg-white p-8 rounded shadow-md">
@@ -148,7 +137,6 @@ const handleFacebookLogin = async () => {
           </button>
         </div>
         {/*          */}
-
       </form>
 
       <div className="my-6 flex justify-center gap-6">

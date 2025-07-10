@@ -52,6 +52,21 @@ const useUserStore = create((set) => ({
     }
   },
 
+  // 新增: 儲存 Firebase 登入後的 token 和 user
+  saveFirebaseLogin: ({ token, account, customerName, email, birthday, address }) => {
+    const user = { account, customerName, email, birthday, address };
+
+    // 儲存 token 和 user
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+
+    // 設定 header
+    setTokenHeader(token);
+
+    // 更新狀態
+    set({ user, token, isAuthenticated: true });
+  },
+
   logout: () => {
     clearTokenHeader();
     localStorage.removeItem('token');
