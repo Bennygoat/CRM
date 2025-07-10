@@ -18,7 +18,6 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { FaStar, FaRegStar, FaClock, FaEdit } from "react-icons/fa";
 
-
 const visibleStages = ["INITIAL_CONTACT", "PROPOSAL", "NEGOTIATION", "CLOSED_WON"];
 const columnTitles = {
   INITIAL_CONTACT: "初步接洽",
@@ -26,9 +25,14 @@ const columnTitles = {
   NEGOTIATION: "談判",
   CLOSED_WON: "成交"
 };
+export const columnStyleMap = {
+  INITIAL_CONTACT: "default",
+  PROPOSAL: "warning",
+  NEGOTIATION: "error",
+  CLOSED_WON: "success",
+};
 
-export default function SalesFunnelBoard({ columns, setColumns, onCardDoubleClick,onContractGenerated}) {
-
+export default function SalesFunnelBoard({ columns, setColumns, onCardDoubleClick, onContractGenerated }) {
   const [overColumnId, setOverColumnId] = useState(null);
   const [activeCard, setActiveCard] = useState(null);
   const [activeId, setActiveId] = useState(null);
@@ -52,14 +56,12 @@ export default function SalesFunnelBoard({ columns, setColumns, onCardDoubleClic
   const handleDragOver = ({ active, over }) => {
     if (!over) return;
     const overId = over.id;
-
     const isOverColumn = Object.keys(columns).includes(overId);
     const targetColumn = isOverColumn
       ? overId
       : Object.keys(columns).find((key) =>
           columns[key].some((item) => item.id === overId)
         );
-
     if (targetColumn) {
       setOverColumnId(targetColumn);
     }
@@ -69,12 +71,12 @@ export default function SalesFunnelBoard({ columns, setColumns, onCardDoubleClic
     setActiveCard(null);
     setOverColumnId(null);
     setActiveId(null);
-    setOverColumnId(null);
     if (!over) return;
 
     const activeId = active.id;
     const overId = over.id;
 
+    // 找出來源欄和目標欄
     const sourceColumn = Object.keys(columns).find((key) =>
       columns[key].some((item) => item.id === activeId)
     );
@@ -83,42 +85,55 @@ export default function SalesFunnelBoard({ columns, setColumns, onCardDoubleClic
       : Object.keys(columns).find((key) =>
           columns[key].some((item) => item.id === overId)
         );
-
     if (!sourceColumn || !targetColumn) return;
 
+    // 拿到被拖的那筆資料
     const activeItem = columns[sourceColumn].find((i) => i.id === activeId);
 
     if (sourceColumn === targetColumn) {
-      const oldIndex = columns[sourceColumn].findIndex(
-        (i) => i.id === activeId
-      );
+      // 同欄排序
+      const oldIndex = columns[sourceColumn].findIndex((i) => i.id === activeId);
       const newIndex = columns[targetColumn].findIndex((i) => i.id === overId);
       if (oldIndex !== newIndex) {
         const newItems = arrayMove(columns[sourceColumn], oldIndex, newIndex);
         setColumns({ ...columns, [sourceColumn]: newItems });
       }
     } else {
+      // 跨欄位移動：同時更新 type 並呼叫後端 update
       const newSource = columns[sourceColumn].filter((i) => i.id !== activeId);
-      const newTarget = [...columns[targetColumn], activeItem];
+
+      // 將 type 換成對應顏色
+      const updatedItem = {
+        ...activeItem,
+        stage: targetColumn,
+        type: columnStyleMap[targetColumn]
+      };
+
+      const newTarget = [...columns[targetColumn], updatedItem];
+
       setColumns({
         ...columns,
         [sourceColumn]: newSource,
         [targetColumn]: newTarget,
       });
 
+      // 類似 SQL 的 UPDATE
+      axios
+        .patch(`/opportunities/${activeId}`, { stage: targetColumn })
+        .then(() => {
+          console.log(`✅ 機會 (${activeId}) 已更新為 ${targetColumn}`);
+        })
+        .catch((error) => {
+          console.error("❌ 更新階段失敗", error);
+        });
+
+      // 如果移到「成交」，同時產合約
       if (targetColumn === "CLOSED_WON") {
-        const opportunityId =
-          activeItem?.opportunityId || activeItem?.id?.replace(/^c/, "");
-        if (opportunityId) {
-          axios
-            .post("/contracts/generate", { opportunityId })
-            .then((res) => {
-              onContractGenerated?.(res.data);
-            })
-            .catch((error) => {
-              console.error("❌ 合約產生失敗", error);
-            });
-        }
+        const opportunityId = activeItem.opportunityId || String(activeItem.id).replace(/^c/, "");
+        axios
+          .post("/contracts/generate", { opportunityId })
+          .then((res) => onContractGenerated?.(res.data))
+          .catch((error) => console.error("❌ 合約產生失敗", error));
       }
     }
   };
@@ -141,13 +156,12 @@ export default function SalesFunnelBoard({ columns, setColumns, onCardDoubleClic
               title={columnTitles[columnId]}
               items={items}
               isOver={overColumnId === columnId}
-              activeId={activeId}
               onCardDoubleClick={onCardDoubleClick}
             />
           ))}
       </div>
       <DragOverlay dropAnimation={null}>
-        {activeCard ? (
+        {activeCard && (
           <SortableCard
             id={activeCard.id}
             title={activeCard.title}
@@ -155,26 +169,24 @@ export default function SalesFunnelBoard({ columns, setColumns, onCardDoubleClic
             type={activeCard.type || "default"}
             isOverlay
           />
-        ) : null}
+        )}
       </DragOverlay>
     </DndContext>
   );
 }
 
-function Column({ id, title, items, isOver, activeId ,onCardDoubleClick}) {
+function Column({ id, title, items, isOver, onCardDoubleClick }) {
   const { setNodeRef } = useDroppable({ id });
   return (
     <div
+      ref={setNodeRef}
       className={`transition-colors rounded-xl min-h-[100px] ${
         isOver ? "bg-gray-200" : "bg-white"
       }`}
     >
       <h2 className="font-bold text-lg mb-2">{title}</h2>
-      <SortableContext
-        items={items.map((item) => item.id)}
-        strategy={rectSortingStrategy}
-      >
-        <div ref={setNodeRef} className="flex flex-col gap-4">
+      <SortableContext items={items.map((item) => item.id)} strategy={rectSortingStrategy}>
+        <div className="flex flex-col gap-4">
           {items.map((item) => (
             <SortableCard
               key={item.id}
@@ -182,6 +194,7 @@ function Column({ id, title, items, isOver, activeId ,onCardDoubleClick}) {
               title={item.title}
               rating={item.rating || 0}
               type={item.type || "default"}
+              onCardDoubleClick={() => onCardDoubleClick(item)}
             />
           ))}
         </div>
@@ -190,31 +203,10 @@ function Column({ id, title, items, isOver, activeId ,onCardDoubleClick}) {
   );
 }
 
-function SortableCard({
-  id,
-  title,
-  rating,
-  type = "default",
-  isOverlay = false,
-  isPreview = false,
-  onCardDoubleClick,
-}) {
+function SortableCard({ id, title, rating, type = "default", isOverlay = false, onCardDoubleClick }) {
   const [currentRating, setCurrentRating] = useState(rating);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [selectedType, setSelectedType] = useState(type);
-
-  const handleStarClick = (index) => {
-    if (currentRating === 1 && index === 0) {
-      setCurrentRating(0);
-    } else {
-      setCurrentRating(index + 1);
-    }
-  };
-
-  const handleTypeChange = (newType) => {
-    setSelectedType(newType);
-    setShowColorPicker(false);
-  };
 
   const {
     attributes,
@@ -250,60 +242,45 @@ function SortableCard({
       onDoubleClick={onCardDoubleClick}
       className={`bg-white w-full px-3 py-4 border-2 ${borderColor} hover:shadow-md rounded-2xl relative cursor-pointer group`}
     >
-      {/* 卡片右上角的 FaEdit 和顏色選單 */}
       <div className="absolute bottom-2 right-2">
         <FaEdit
           className="text-gray-500 hover:text-black transition duration-200 cursor-pointer"
-          onClick={() => setShowColorPicker((prev) => !prev)}
+          onClick={() => setShowColorPicker((v) => !v)}
         />
         {showColorPicker && (
           <div className="absolute right-0 mt-2 bg-white border rounded shadow-md z-50 p-2 space-y-1">
-            {["success", "warning", "error", "info"].map((typeOption) => (
+            {["success", "warning", "error", "info"].map((opt) => (
               <div
-                key={typeOption}
-                onClick={() => handleTypeChange(typeOption)}
+                key={opt}
+                onClick={() => {
+                  setSelectedType(opt);
+                  setShowColorPicker(false);
+                }}
                 className="flex items-center gap-2 px-2 py-1 text-sm cursor-pointer rounded hover:bg-gray-100"
               >
-                <span
-                  className={`inline-block w-3 h-3 rounded-full ${
-                    {
-                      success: "bg-green-400",
-                      warning: "bg-yellow-400",
-                      error: "bg-red-400",
-                      info: "bg-blue-400",
-                      default: "bg-gray-400",
-                    }[typeOption]
-                  }`}
-                ></span>
-                {typeOption}
+                <span className={`inline-block w-3 h-3 rounded-full ${
+                  { success:"bg-green-400", warning:"bg-yellow-400", error:"bg-red-400", info:"bg-blue-400" }[opt]
+                }`} />
+                {opt}
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* 標題 */}
       <div className="font-semibold mb-2">{title}</div>
-
-      {/* 星星評分 */}
       <div className="flex items-center text-sm text-gray-600">
-        {[...Array(5)].map((_, idx) =>
-          idx < currentRating ? (
-            <FaStar
+        {[...Array(5)].map((_, idx) => {
+          const filled = idx < currentRating;
+          const Icon = filled ? FaStar : FaRegStar;
+          return (
+            <Icon
               key={idx}
-              className="text-yellow-400 cursor-pointer"
-              onClick={() =>
-                setCurrentRating(currentRating === 1 && idx === 0 ? 0 : idx + 1)
-              }
+              className={filled ? "text-yellow-400 cursor-pointer" : "cursor-pointer"}
+              onClick={() => setCurrentRating(filled && idx === 0 ? 0 : idx + 1)}
             />
-          ) : (
-            <FaRegStar
-              key={idx}
-              className="cursor-pointer"
-              onClick={() => setCurrentRating(idx + 1)}
-            />
-          )
-        )}
+          );
+        })}
       </div>
     </div>
   );
