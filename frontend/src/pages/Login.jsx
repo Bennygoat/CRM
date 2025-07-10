@@ -27,7 +27,7 @@ const handleGoogleLogin = async () => {
     const idToken = await user.getIdToken();
     console.log(idToken);
 
-    const response = await axios.post("/api/customer/auth/firebase-login", {
+    const response = await axios.post("/customer/auth/firebase-login", {
       provider: "google",
       token: idToken,
     });
@@ -49,7 +49,7 @@ const handleFacebookLogin = async () => {
     const user = result.user;
     const idToken = await user.getIdToken();
 
-    const response = await axios.post("/api/customer/auth/firebase-login", {
+    const response = await axios.post("/customer/auth/firebase-login", {
       provider: "facebook",
       token: idToken,
     });

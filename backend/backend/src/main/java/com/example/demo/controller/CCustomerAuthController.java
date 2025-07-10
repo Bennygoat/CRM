@@ -49,6 +49,8 @@ public class CCustomerAuthController {
     @Operation(summary = "客戶登入firebase")
     @PostMapping("/firebase-login")
     public ResponseEntity<CCustomerLoginResponse> loginWithFirebase(@RequestBody FirebaseLoginRequest request) {
+        System.out.println("測試authcontroller:" + request.getProvider()); //有接收到token
+        System.out.println(request.getToken());
         return ResponseEntity.ok(cCustomerService.loginWithFirebase(request.getProvider(), request.getToken()));
     }
 

@@ -212,14 +212,14 @@ public class CCustomerService {
             }
 
             JwtUserPayload payload = JwtUserPayload.fromCustomer(customer);
-            String jwt = JwtTool.createToken(payload);
+            String token = JwtTool.createToken(payload);
 
             return CCustomerLoginResponse.builder()
-                    .token(jwt)
+                    .token(token)
                     .account(customer.getAccount())
                     .customerName(customer.getCustomerName())
                     .email(customer.getAccount()) // 用 account 當作 email（Firebase 不一定有 email 欄）
-                    .address(customer.getCCustomerAddress().isEmpty() ? null : customer.getCCustomerAddress().get(0).getAddress())
+//                    .address(customer.getCCustomerAddress().isEmpty() ? null : customer.getCCustomerAddress().get(0).getAddress())
                     .birthday(customer.getBirthday())
                     .createdAt(customer.getCreatedAt())
                     .spending(customer.getSpending())
