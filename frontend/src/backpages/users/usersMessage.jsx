@@ -18,7 +18,7 @@ const UsersMessage = () => {
   const fetchMessages = async (page = 1) => {
     setLoading(true);
     try {
-      const res = await axios.get("/customer/message/list", {
+      const res = await axios.get("/customer/message/user/list", {
         params: {
           page: page - 1,
           size: PAGE_SIZE,

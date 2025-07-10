@@ -120,23 +120,6 @@ function Login() {
           開始購物吧！
         </button>
 
-        {/*          firebase新增 */}
-        <div className="mt-6 flex flex-col gap-3">
-          <button
-            onClick={handleGoogleLogin}
-            className="bg-white border border-gray-300 py-2 rounded hover:bg-gray-50"
-          >
-            使用 Google 登入
-          </button>
-
-          <button
-            onClick={handleFacebookLogin}
-            className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-          >
-            使用 Facebook 登入
-          </button>
-        </div>
-        {/*          */}
       </form>
 
       <div className="my-6 flex justify-center gap-6">
