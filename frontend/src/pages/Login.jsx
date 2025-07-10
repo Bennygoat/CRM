@@ -6,11 +6,6 @@ import { signInWithPopup } from "firebase/auth";
 import useUserStore from "../stores/userStore";
 import axios from "../api/axiosFrontend";
 
-// firebase新增
-import { auth, googleProvider, facebookProvider } from "../firebase";
-import { signInWithPopup } from "firebase/auth";
-import axios from "../api/axiosFrontend";
-//
 
 function Login() {
   const [account, setAccount] = useState("");
@@ -87,108 +82,8 @@ const handleFacebookLogin = async () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setError(null);
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
 
-      console.log("Google 登入成功:", user);
-
-      const payload = {
-        email: user.email,
-        account: user.email,
-        customerName: user.displayName || "Google使用者",
-        password: user.uid + "@G",
-      };
-
-      try {
-        await login({ account: user.email, password: user.uid + "@G" });
-        navigate("/User");
-      } catch (err) {
-        const errorMessage =
-          typeof err === "string"
-            ? err // 後端直接回錯誤字串
-            : err.response?.data?.message || err.message || "未知錯誤";
-
-        console.error("登入失敗:", errorMessage);
-
-        if (
-          errorMessage.toLowerCase().includes("帳號") &&
-          errorMessage.toLowerCase().includes("密碼")
-        ) {
-          console.log("檢測到帳號密碼錯誤，自動註冊...");
-
-          try {
-            const response = await axios.post("/customer/register", payload);
-            console.log("註冊成功:", response.data);
-
-            await login({ account: user.email, password: user.uid + "@G" });
-            navigate("/User");
-          } catch (registerError) {
-            console.error(
-              "自動註冊失敗:",
-              registerError.response?.data || registerError.message
-            );
-            setError("自動註冊失敗，請稍後再試");
-          }
-        } else {
-          setError("Google 登入失敗，請稍後再試");
-        }
-      }
-    } catch (err) {
-      console.error("Google 登入失敗 (Firebase):", err);
-      setError("Google 登入失敗，請稍後再試");
-    }
-  };
-
-  const handleFacebookLogin = async () => {
-    setError(null);
-    try {
-      const result = await signInWithPopup(auth, facebookProvider);
-      const user = result.user;
-
-      console.log("Facebook 登入成功:", user);
-
-      const payload = {
-        email: user.email,
-        account: user.email,
-        customerName: user.displayName || "Facebook使用者",
-        password: user.uid,
-      };
-
-      try {
-        await login({ account: user.email, password: user.uid });
-        navigate("/User");
-      } catch (err) {
-        const errorMessage = err.response?.data?.message || "";
-        console.error("登入失敗:", errorMessage);
-
-        if (errorMessage.includes("帳號密碼錯誤")) {
-          console.log("帳號不存在，自動註冊...");
-
-          try {
-            const response = await axios.post("/customer/register", payload);
-            console.log("註冊成功:", response.data);
-
-            await login({ account: user.email, password: user.uid });
-            navigate("/User");
-          } catch (registerError) {
-            console.error(
-              "自動註冊失敗:",
-              registerError.response?.data || registerError.message
-            );
-            setError("自動註冊失敗，請稍後再試");
-          }
-        } else {
-          setError("Facebook 登入失敗，請稍後再試");
-        }
-      }
-    } catch (err) {
-      console.error("Facebook 登入失敗 (Firebase):", err);
-      setError("Facebook 登入失敗，請稍後再試");
-    }
-  };
+  
 
   return (
     <div className="max-w-md mx-auto bg-white p-8 rounded shadow-md">
