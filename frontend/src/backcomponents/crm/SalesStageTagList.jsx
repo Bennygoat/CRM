@@ -1,7 +1,5 @@
 import React from 'react';
 
-// 步驟 1：建立一個階段樣式的對照表 (Config)
-// 在這裡集中管理每個階段的 CSS Class，方便未來統一修改
 const stageStyleConfig = {
   "需求分析": "bg-purple-100 text-purple-800",
   "提案": "bg-orange-100 text-orange-800",
@@ -12,7 +10,6 @@ const stageStyleConfig = {
   "default": "bg-gray-100 text-gray-500" // 提供一個預設值
 };
 
-// 這是您的銷售階段資料範例
 const opportunities = [
   { id: 1, stage: "需求分析" },
   { id: 2, stage: "需求分析" },
@@ -33,14 +30,11 @@ const SalesStageTagList = () => {
         <h2 className="text-lg font-bold text-gray-700">銷售階段</h2>
       </div>
       <ul className="divide-y divide-gray-200">
-        {/* 步驟 2：遍歷您的商機資料 */}
         {opportunities.map(opp => {
-          // 從對照表中找出對應的樣式
           const styleClass = stageStyleConfig[opp.stage] || stageStyleConfig.default;
 
           return (
             <li key={opp.id} className="p-4 flex justify-center">
-              {/* 步驟 3：渲染標籤並套用樣式 */}
               <span className={`px-3 py-1 text-sm font-semibold rounded-full ${styleClass}`}>
                 {opp.stage}
               </span>

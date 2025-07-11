@@ -48,6 +48,8 @@ public interface OpportunityService {
      */
     OpportunityDto update(Long id, OpportunityRequest request);
 
+    OpportunityDto updateStage(Long id, OpportunityStage newStage);
+
     /**
      * 根據商機ID刪除一個商機。
      * @param id 要刪除的商機的唯一識別碼。

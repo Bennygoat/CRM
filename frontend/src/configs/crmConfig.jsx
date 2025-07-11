@@ -42,7 +42,7 @@ const crmConfig = {
       },
       {
         path: '/crm/salesfunnel',
-        name: '銷售漏斗',
+        name: '商機看板',
         icon: <FunnelPlotOutlined />,
       },
     ],

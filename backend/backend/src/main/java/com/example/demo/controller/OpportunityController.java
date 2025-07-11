@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/opportunities")
@@ -74,6 +75,25 @@ public class OpportunityController {
     public ResponseEntity<OpportunityDto> update(@PathVariable Long id, @Valid @RequestBody OpportunityRequest request) {
         OpportunityDto updatedOpportunity = opportunityService.update(id, request);
         return ResponseEntity.ok(updatedOpportunity); // 返回 HTTP 200 OK
+    }
+
+    /**
+     * PATCH /api/opportunities/{id}
+     * 只更新 stage
+     */
+    @PatchMapping("/{id}")
+    public ResponseEntity<OpportunityDto> patchStage(
+            @PathVariable Long id,
+            @RequestBody Map<String,String> updates  // 只要抓 stage
+    ) {
+        String stageStr = updates.get("stage");
+        if (stageStr == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        OpportunityStage newStage = OpportunityStage.valueOf(stageStr);
+        OpportunityDto updated = opportunityService.updateStage(id, newStage);
+        return ResponseEntity.ok(updated);
     }
 
     /**

@@ -171,6 +171,17 @@ public class OpportunityServiceImpl implements OpportunityService {
         return opportunityMapper.toResponse(updatedOpportunity, null);
     }
 
+    @Override
+    @Transactional
+    public OpportunityDto updateStage(Long id, OpportunityStage newStage) {
+        Opportunity entity = opportunityRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("找不到 ID 為 " + id + " 的商機"));
+
+        entity.setStage(newStage);
+        Opportunity saved = opportunityRepository.save(entity);
+        return opportunityMapper.toResponse(saved, null);
+    }
+
     /**
      * 根據商機ID刪除一個商機。
      * @param id 要刪除的商機的唯一識別碼。

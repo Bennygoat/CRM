@@ -99,8 +99,7 @@ export default function SalesFunnelBoard({ columns, setColumns, onCardDoubleClic
         setColumns({ ...columns, [sourceColumn]: newItems });
       }
     } else {
-      // 跨欄位移動：同時更新 type 並呼叫後端 update
-      const newSource = columns[sourceColumn].filter((i) => i.id !== activeId);
+       const newSource = columns[sourceColumn].filter((i) => i.id !== activeId);
 
       // 將 type 換成對應顏色
       const updatedItem = {
@@ -117,11 +116,15 @@ export default function SalesFunnelBoard({ columns, setColumns, onCardDoubleClic
         [targetColumn]: newTarget,
       });
 
+      const payloadId = activeItem.opportunityId
+        ? activeItem.opportunityId
+        : Number(activeId.replace(/^c/, ""));
+
       // 類似 SQL 的 UPDATE
       axios
-        .patch(`/opportunities/${activeId}`, { stage: targetColumn })
+        .patch(`/opportunities/${payloadId}`, { stage: targetColumn })
         .then(() => {
-          console.log(`✅ 機會 (${activeId}) 已更新為 ${targetColumn}`);
+          console.log(`✅ 機會 (${payloadId}) 已更新為 ${targetColumn}`);
         })
         .catch((error) => {
           console.error("❌ 更新階段失敗", error);
@@ -255,6 +258,15 @@ function SortableCard({ id, title, rating, type = "default", isOverlay = false, 
                 onClick={() => {
                   setSelectedType(opt);
                   setShowColorPicker(false);
+
+                  axios.patch(`/opportunities/${id}`, { type: opt })
+                      .then(() => {
+                        console.log(`✅ 顏色標籤已更新為 ${opt}`);
+                      })
+                      .catch((error) => {
+                        console.error("❌ 顏色標籤更新失敗", error);
+                        setSelectedType(type);
+                      });
                 }}
                 className="flex items-center gap-2 px-2 py-1 text-sm cursor-pointer rounded hover:bg-gray-100"
               >
