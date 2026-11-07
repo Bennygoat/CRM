@@ -52,6 +52,7 @@ public class DataInitializer {
     private final WarehouseRepository warehouseRepository; // ✨ 5. 新增 WarehouseRepository
     private final InventoryRepository inventoryRepository; // ✨ 6. 新增 InventoryRepository
     private final InventoryFaker inventoryFaker;         // ✨ 7. 注入 InventoryFaker
+    private final PlatformRepository platformRepository;
 
     private static final Long SYSTEM_USER_ID = 1L;
 
@@ -65,6 +66,7 @@ public class DataInitializer {
     public void initCriticalData() {
         initAuthoritiesAndAdmin();
         createVipLevelsIfNotExist();
+        createDefaultPlatformIfNotExist();
     }
 
     @Bean
@@ -214,6 +216,17 @@ public class DataInitializer {
             userRepository.save(admin);
         }
     }
+    // OrderService 固定使用 ID 1 的平台，空資料表的第一筆自動編號就是 1
+    private void createDefaultPlatformIfNotExist() {
+        if (platformRepository.count() > 0) {
+            return;
+        }
+        Platform platform = new Platform();
+        platform.setPlatformname("官方網站");
+        platform.setCreateat(LocalDateTime.now());
+        platformRepository.save(platform);
+    }
+
     private void createVipLevelsIfNotExist() {
         for (VIPLevelEnum levelEnum : VIPLevelEnum.values()) {
             if (!vipLevelRepo.existsById(levelEnum.name())) {

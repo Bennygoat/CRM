@@ -26,6 +26,7 @@ Read in other languages: [English](README_en.md) | [中文](README.md)
     * [2. 取得專案程式碼](#2-取得專案程式碼)
     * [3. 後端設定 (Backend Setup)](#3-後端設定-backend-setup)
     * [4. 前端設定 (Frontend Setup)](#4-前端設定-frontend-setup)
+    * [5. 確認跑起來了](#5-確認跑起來了)
 * [📚 API 文件 (Swagger)](#api-文件-swagger)
 * [💡 未來展望 (AI 整合 - 初級概念)](#未來展望-ai-整合---初級概念)
 * [🤝 貢獻與協作](#貢獻與協作)
@@ -88,30 +89,27 @@ cd CRM
 
 ### 3\. 後端設定 (Backend Setup)
 
-* **進入 `backend/backend` 目錄。**
+**需要先安裝**：JDK 17 以上（已用 JDK 21 驗證）、Node.js、Docker Desktop。不用另外安裝 Maven 和 MySQL。
 
-  * **配置資料庫：**
-    開啟 `src/main/resources/application.properties` 並根據您的 MySQL 環境修改以下設定：
+* **啟動 MySQL（在專案根目錄）：**
 
-    ```properties
-    spring.datasource.url=jdbc:mysql://localhost:3306/your_database_name?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    spring.datasource.username=your_username
-    spring.datasource.password=your_password
-    ```
+  ```bash
+  docker compose up -d --wait
+  ```
 
-    替換 `your_database_name`、`your_username`、`your_password` 為您的實際設定。
+  會建立 `sample_0702` 資料庫，帳密與 `application.properties` 一致，資料表由後端啟動時自動建立。如果本機已有程式佔用 3306，要先停掉。
 
-    **重要提示：** 在運行後端應用程式之前，請確保您的 MySQL 資料庫已建立，並且 `your_database_name` 存在。您可以使用工具如 MySQL Workbench 或 DBeaver 來管理資料庫。
-
+* **（選用）放 Firebase 金鑰：**
+  顧客前台用 Firebase 登入，要把金鑰存成 `backend/backend/src/main/resources/firebase-adminsdk.json`。這個檔案不進版控。沒有金鑰時後端仍可啟動，只有顧客的 Firebase 登入無法使用。
 
 * **運行後端應用程式：**
 
   ```bash
   # 在 backend/backend 目錄下
-  ./mvnw spring-boot:run
+  ./mvnw spring-boot:run "-Dspring-boot.run.profiles=dev"
   ```
 
-  後端服務將預設運行在 `http://localhost:8080`。
+  後端服務將預設運行在 `http://localhost:8080`。`dev` profile 會在沒有商品時產生假資料；不加就只有管理員帳號和基礎資料。
 
 ### 4\. 前端設定 (Frontend Setup)
 
@@ -124,7 +122,13 @@ cd CRM
   npm run dev # 啟動開發伺服器
   ```
 
-  前端應用程式將預設運行在 `http://localhost:5173` (或顯示在您的終端機)。
+  前端應用程式將預設運行在 `http://localhost:5173`，`/api` 的請求會轉給後端。想改用假資料，新增 `frontend/.env.local` 並寫入 `VITE_USE_MOCK=true`。
+
+### 5\. 確認跑起來了
+
+* 開啟 `http://localhost:5173/backlogin`，用帳號 `admin` 登入，密碼見 `DataInitializer.java` 的 `initAuthoritiesAndAdmin`。
+* 登入後會進到使用者管理頁，看得到「超級管理員」這筆資料。
+* 想清空資料庫重來：在專案根目錄執行 `docker compose down -v`，再從第 3 節開始。
 
 ## 📚 API 文件 (Swagger)
 
