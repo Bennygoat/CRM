@@ -68,8 +68,8 @@ This project adopts a decoupled frontend and backend architecture, with React fo
 
 ### 1\. Live Demo
 
-Our project has been successfully deployed online. You are welcome to experience the full functionality via the following link:
-🔗 **Website Link**: [`https://dontwannawork.com`](https://dontwannawork.com) 
+There is no live environment at the moment. Follow the steps below to run the project locally.
+
 ### 2\. Get Project Code
 
 ```bash
