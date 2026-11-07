@@ -1,0 +1,22 @@
+# 本機開發用的 MySQL。帳密對應 application.properties，只綁 127.0.0.1，不對區網開放。
+name: crm
+
+services:
+  mysql:
+    image: mysql:8.0.40
+    container_name: crm-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sample_0702
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - crm-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  crm-mysql-data:
