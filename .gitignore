@@ -2,6 +2,7 @@
 /frontend/node_modules/
 /frontend/dist/
 /frontend/dist-ssr/
+/frontend/.vite/
 /frontend/*.local
 /frontend/npm-debug.log*
 /frontend/yarn-debug.log*
@@ -13,13 +14,13 @@
 /backend/target/
 /backend/backend/target/
 /backend/*.log
-/backend/.settings/
-/backend/.classpath
-/backend/.project
+/backend/backend/.settings/
+/backend/backend/.classpath
+/backend/backend/.project
 /backend/.metadata/
 /backend/.idea/
 /backend/*.iml
-/backend/src/main/resources/firebase-adminsdk.json
+*firebase-adminsdk*.json
 
 # === General IDE ===
 .idea/
