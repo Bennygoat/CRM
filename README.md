@@ -101,6 +101,33 @@ cd CRM
 * **（選用）放 Firebase 金鑰：**
   顧客前台用 Firebase 登入，要把金鑰存成 `backend/backend/src/main/resources/firebase-adminsdk.json`。這個檔案不進版控。沒有金鑰時後端仍可啟動，只有顧客的 Firebase 登入無法使用。
 
+* **設定 JWT 金鑰（必要）：**
+  後端用環境變數 `JWT_SECRET` 簽發登入 token，沒設定就無法啟動，Console 會出現 `Could not resolve placeholder 'JWT_SECRET'`。金鑰是 32 bytes 隨機值的 Base64 字串，每台電腦自己產生一把，不要提交、不要貼到別處。
+
+  1. 產生金鑰，下面兩個指令擇一，輸出的那一行就是金鑰：
+
+     ```powershell
+     # PowerShell
+     $b = New-Object byte[] 32; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b)
+     ```
+
+     ```bash
+     # Git Bash
+     openssl rand -base64 32
+     ```
+
+  2. 選一種方式提供給後端：
+
+     | 方式 | 做法 | 適合 |
+     |---|---|---|
+     | `.env` 檔（建議） | 把 `backend/backend/.env.example` 複製成同目錄的 `.env`，在 `JWT_SECRET=` 後面貼上金鑰 | 本機開發；`./mvnw`、IntelliJ、Eclipse 都讀得到。`.env` 已列在 `.gitignore` |
+     | IDE 執行設定 | IntelliJ：Run → Edit Configurations → 選後端 → Environment variables 加 `JWT_SECRET=金鑰`。Eclipse：Run Configurations → Environment → Add | 只想在 IDE 裡跑；換電腦或新增設定要再填一次 |
+     | Windows 使用者環境變數 | `[Environment]::SetEnvironmentVariable('JWT_SECRET', '金鑰', 'User')`，之後重開終端機和 IDE | 所有程式都讀得到，但其他專案也看得見，換金鑰時容易忘記這裡 |
+
+     同時有設定時，環境變數優先於 `.env`。`.env` 是從後端的工作目錄讀取，IDE 的 Working directory 要是 `backend/backend`。
+
+  3. 換金鑰後，舊金鑰簽的 token 會全部失效，使用者重新登入即可。
+
 * **運行後端應用程式：**
 
   ```bash

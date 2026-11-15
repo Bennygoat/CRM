@@ -45,6 +45,7 @@ public class CCustomerService {
     private final PasswordResetTokenRepo tokenRepo;
     private final CouponTemplateService couponTemplateService;
     private final CustomerCouponService customerCouponService;
+    private final JwtTool jwtTool;
 
     // 註冊禮優惠券的代碼
     private static final String NEW_MEMBER_COUPON_CODE = "NEW_MEMBER_90";
@@ -56,7 +57,9 @@ public class CCustomerService {
                             VIPLevelService vipLevelService,
                             PasswordResetTokenRepo tokenRepo,
                             CouponTemplateService couponTemplateService,
-                            CustomerCouponService customerCouponService) {
+                            CustomerCouponService customerCouponService,
+                            JwtTool jwtTool) {
+        this.jwtTool = jwtTool;
         this.cCustomerRepo = cCustomerRepo;
         this.vipLevelRepo = vipLevelRepo;
         this.vipLevelService = vipLevelService;
@@ -212,7 +215,7 @@ public class CCustomerService {
             }
 
             JwtUserPayload payload = JwtUserPayload.fromCustomer(customer);
-            String token = JwtTool.createToken(payload);
+            String token = jwtTool.createToken(payload);
 
             return CCustomerLoginResponse.builder()
                     .token(token)

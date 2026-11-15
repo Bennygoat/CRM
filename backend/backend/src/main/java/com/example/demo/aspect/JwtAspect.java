@@ -17,6 +17,12 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @Component
 public class JwtAspect {
 
+    private final JwtTool jwtTool;
+
+    public JwtAspect(JwtTool jwtTool) {
+        this.jwtTool = jwtTool;
+    }
+
     @Around("@annotation(com.example.demo.security.CheckJwt)")
     public Object checkJwt(ProceedingJoinPoint joinPoint) throws Throwable {
         System.out.println("JwtAspect checkJwt START");
@@ -30,7 +36,7 @@ public class JwtAspect {
         String token = authHeader.substring(7);
 
         // 1. 解析 Token，取得完整的 Payload 物件
-        JwtUserPayload payload = JwtTool.parseToken(token);
+        JwtUserPayload payload = jwtTool.parseToken(token);
         if (payload == null) {
             throw new JwtException("Token 過期或無效");
         }

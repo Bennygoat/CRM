@@ -19,8 +19,10 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/user/auth")
 public class UserAuthController {
     private final UserService userService;
-    public UserAuthController(UserService userService) {
+    private final JwtTool jwtTool;
+    public UserAuthController(UserService userService, JwtTool jwtTool) {
         this.userService = userService;
+        this.jwtTool = jwtTool;
     }
 
     @PostMapping("/login")
@@ -30,7 +32,7 @@ public class UserAuthController {
                 req.getPassword()
         );
 
-        String token =  JwtTool.createToken(JwtUserPayload.fromUser(user));
+        String token =  jwtTool.createToken(JwtUserPayload.fromUser(user));
 
         UserLoginResponse res = UserLoginResponse.builder()
                 .token(token)

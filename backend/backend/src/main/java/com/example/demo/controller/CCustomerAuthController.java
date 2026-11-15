@@ -20,8 +20,10 @@ import org.springframework.web.bind.annotation.*;
 public class CCustomerAuthController {
 
     private final CCustomerService cCustomerService;
-    public CCustomerAuthController(CCustomerService cCustomerService) {
+    private final JwtTool jwtTool;
+    public CCustomerAuthController(CCustomerService cCustomerService, JwtTool jwtTool) {
         this.cCustomerService = cCustomerService;
+        this.jwtTool = jwtTool;
     }
 
     @Operation(summary = "客戶登入並獲取 JWT Token")
@@ -32,7 +34,7 @@ public class CCustomerAuthController {
                 req.getPassword()
         );
 
-        String token =  JwtTool.createToken(JwtUserPayload.fromCustomer(cCustomer));
+        String token =  jwtTool.createToken(JwtUserPayload.fromCustomer(cCustomer));
 
         CCustomerLoginResponse res = CCustomerLoginResponse.builder()
                 .token(token)
