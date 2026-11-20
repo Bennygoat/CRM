@@ -19,6 +19,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -53,6 +54,10 @@ public class DataInitializer {
     private final InventoryRepository inventoryRepository; // ✨ 6. 新增 InventoryRepository
     private final InventoryFaker inventoryFaker;         // ✨ 7. 注入 InventoryFaker
     private final PlatformRepository platformRepository;
+
+    // 管理員初始密碼，來自環境變數 ADMIN_INITIAL_PASSWORD；沒設定時是空字串
+    @Value("${app.admin.initial-password:}")
+    private String adminInitialPassword;
 
     private static final Long SYSTEM_USER_ID = 1L;
 
@@ -200,11 +205,15 @@ public class DataInitializer {
 
         // 2. 建立 admin 使用者
         if (userRepository.findByAccount("admin").isEmpty()) {
+            if (adminInitialPassword.isBlank()) {
+                log.warn("Admin account not created: ADMIN_INITIAL_PASSWORD is not set. Set it in .env and restart to create the admin account.");
+                return;
+            }
             List<Authority> allAuthorities = authorityRepo.findAll();
             User admin = User.builder()
                     .account("admin")
                     .userName("超級管理員")
-                    .password(passwordEncoder.encode("Admin123!@#"))
+                    .password(passwordEncoder.encode(adminInitialPassword))
                     .email("admin@system.com")
                     .roleName("ADMIN")
                     .authorities(allAuthorities)

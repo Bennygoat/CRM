@@ -8,7 +8,7 @@ export const backLoginHandlers = [
 
     // 模擬三種角色
     let role;
-    if (account === 'admin' && password === 'Admin123!@#') role = 'admin';
+    if (account === 'admin' && password === 'admin123') role = 'admin'; // mock-only password, not the real admin password
     else if (account === 'editor' && password === 'editor123') role = 'editor';
     else if (account === 'manager' && password === 'manager123') role = 'manager';
     else {
