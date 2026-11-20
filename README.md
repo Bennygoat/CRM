@@ -90,43 +90,57 @@ cd CRM
 
 **需要先安裝**：JDK 17 以上（已用 JDK 21 驗證）、Node.js、Docker Desktop。不用另外安裝 Maven 和 MySQL。
 
+* **建立 `.env`（必要）：**
+  密碼和金鑰都不放在程式裡，改由環境變數提供。本機開發把 `backend/backend/.env.example` 複製成同目錄的 `.env`，填入下表的值。`.env` 已列在 `.gitignore`，不要提交、不要貼到別處，每台電腦自己產生一組。
+
+  | 變數 | 必要 | 說明 |
+  |---|---|---|
+  | `JWT_SECRET` | 是 | 簽發登入 token 的金鑰，32 bytes 隨機值的 Base64 字串 |
+  | `DB_USERNAME` | 是 | 後端連 MySQL 的帳號，預設 `crm_app`，不能用 `root` |
+  | `DB_PASSWORD` | 是 | 上面帳號的密碼，Docker 第一次建立資料庫時會用它建帳號 |
+  | `ADMIN_INITIAL_PASSWORD` | 否 | 內建管理員 `admin` 的初始密碼。只在資料庫還沒有 `admin` 時使用；留空就不建立管理員 |
+  | `ECPAY_*` 六個變數 | 否 | 綠界金流、物流的測試商店代號與 HashKey/HashIV，填綠界開發文件公開的測試值。留空後端仍可啟動，只有付款和物流功能無法使用。正式環境的值絕對不能放進 repo |
+
+  缺少必要變數時後端無法啟動，Console 會出現 `Could not resolve placeholder '變數名'`。
+
+  產生隨機值，下面兩個指令擇一，輸出的那一行就是值（`JWT_SECRET`、`DB_PASSWORD`、`ADMIN_INITIAL_PASSWORD` 各跑一次，不要共用）：
+
+  ```powershell
+  # PowerShell
+  $b = New-Object byte[] 32; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b)
+  ```
+
+  ```bash
+  # Git Bash
+  openssl rand -base64 32
+  ```
+
+  除了 `.env`，也可以用其他方式提供給後端：
+
+  | 方式 | 做法 | 適合 |
+  |---|---|---|
+  | `.env` 檔（建議） | 如上 | 本機開發；`./mvnw`、IntelliJ、Eclipse、Docker Compose 都讀得到 |
+  | IDE 執行設定 | IntelliJ：Run → Edit Configurations → 選後端 → Environment variables 加 `變數=值`。Eclipse：Run Configurations → Environment → Add | 只想在 IDE 裡跑；換電腦或新增設定要再填一次。Docker Compose 讀不到，還是要有 `.env` |
+  | Windows 使用者環境變數 | `[Environment]::SetEnvironmentVariable('變數', '值', 'User')`，之後重開終端機和 IDE | 所有程式都讀得到，但其他專案也看得見，換值時容易忘記這裡 |
+
+  同時有設定時，環境變數優先於 `.env`。`.env` 是從後端的工作目錄讀取，IDE 的 Working directory 要是 `backend/backend`。
+
+  換 `JWT_SECRET` 後，舊金鑰簽的 token 會全部失效，使用者重新登入即可。
+
 * **啟動 MySQL（在專案根目錄）：**
 
   ```bash
-  docker compose up -d --wait
+  docker compose --env-file backend/backend/.env up -d --wait
   ```
 
-  會建立 `sample_0702` 資料庫，帳密與 `application.properties` 一致，資料表由後端啟動時自動建立。如果本機已有程式佔用 3306，要先停掉。
+  會建立 `sample_0702` 資料庫和 `DB_USERNAME` 帳號（只有這個資料庫的權限），資料表由後端啟動時自動建立。`root` 密碼是隨機產生的，後端用不到。如果本機已有程式佔用 3306，要先停掉。
+
+  `docker compose` 的指令都要加 `--env-file backend/backend/.env`，因為帳密放在後端資料夾，不在專案根目錄。
+
+  帳號只在資料庫**第一次建立**時產生。之後改了 `DB_USERNAME` 或 `DB_PASSWORD`，要清空資料庫重建（見第 5 節），否則後端會登入失敗（`Access denied`）。
 
 * **（選用）放 Firebase 金鑰：**
   顧客前台用 Firebase 登入，要把金鑰存成 `backend/backend/src/main/resources/firebase-adminsdk.json`。這個檔案不進版控。沒有金鑰時後端仍可啟動，只有顧客的 Firebase 登入無法使用。
-
-* **設定 JWT 金鑰（必要）：**
-  後端用環境變數 `JWT_SECRET` 簽發登入 token，沒設定就無法啟動，Console 會出現 `Could not resolve placeholder 'JWT_SECRET'`。金鑰是 32 bytes 隨機值的 Base64 字串，每台電腦自己產生一把，不要提交、不要貼到別處。
-
-  1. 產生金鑰，下面兩個指令擇一，輸出的那一行就是金鑰：
-
-     ```powershell
-     # PowerShell
-     $b = New-Object byte[] 32; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b)
-     ```
-
-     ```bash
-     # Git Bash
-     openssl rand -base64 32
-     ```
-
-  2. 選一種方式提供給後端：
-
-     | 方式 | 做法 | 適合 |
-     |---|---|---|
-     | `.env` 檔（建議） | 把 `backend/backend/.env.example` 複製成同目錄的 `.env`，在 `JWT_SECRET=` 後面貼上金鑰 | 本機開發；`./mvnw`、IntelliJ、Eclipse 都讀得到。`.env` 已列在 `.gitignore` |
-     | IDE 執行設定 | IntelliJ：Run → Edit Configurations → 選後端 → Environment variables 加 `JWT_SECRET=金鑰`。Eclipse：Run Configurations → Environment → Add | 只想在 IDE 裡跑；換電腦或新增設定要再填一次 |
-     | Windows 使用者環境變數 | `[Environment]::SetEnvironmentVariable('JWT_SECRET', '金鑰', 'User')`，之後重開終端機和 IDE | 所有程式都讀得到，但其他專案也看得見，換金鑰時容易忘記這裡 |
-
-     同時有設定時，環境變數優先於 `.env`。`.env` 是從後端的工作目錄讀取，IDE 的 Working directory 要是 `backend/backend`。
-
-  3. 換金鑰後，舊金鑰簽的 token 會全部失效，使用者重新登入即可。
 
 * **運行後端應用程式：**
 
@@ -148,13 +162,14 @@ cd CRM
   npm run dev # 啟動開發伺服器
   ```
 
-  前端應用程式將預設運行在 `http://localhost:5173`，`/api` 的請求會轉給後端。想改用假資料，新增 `frontend/.env.local` 並寫入 `VITE_USE_MOCK=true`。
+  前端應用程式將預設運行在 `http://localhost:5173`，`/api` 的請求會轉給後端。想改用假資料，新增 `frontend/.env.local` 並寫入 `VITE_USE_MOCK=true`；假資料模式的後台帳號是 `admin`／`admin123`，只在前端模擬，跟真正的管理員密碼無關。
 
 ### 5\. 確認跑起來了
 
-* 開啟 `http://localhost:5173/backlogin`，用帳號 `admin` 登入，密碼見 `DataInitializer.java` 的 `initAuthoritiesAndAdmin`。
+* 開啟 `http://localhost:5173/backlogin`，用帳號 `admin` 和 `.env` 裡的 `ADMIN_INITIAL_PASSWORD` 登入。沒設定這個變數時不會有管理員帳號，後端 Console 會有一行 log 提醒。
+* 管理員建立後，改 `ADMIN_INITIAL_PASSWORD` 不會改到已存在的密碼；要套用新值，就清空資料庫重來。
 * 登入後會進到使用者管理頁，看得到「超級管理員」這筆資料。
-* 想清空資料庫重來：在專案根目錄執行 `docker compose down -v`，再從第 3 節開始。
+* 想清空資料庫重來：在專案根目錄執行 `docker compose --env-file backend/backend/.env down -v`，再從「啟動 MySQL」開始。
 
 ## 📚 API 文件 (Swagger)
 

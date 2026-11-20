@@ -12,7 +12,7 @@ function BackLogin() {
   }, []);
 
   const [account, setAccount] = useState("admin");
-  const [password, setPassword] = useState("Admin123!@#");
+  const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleSubmit = async (e) => {

@@ -1,4 +1,8 @@
-# 本機開發用的 MySQL。帳密對應 application.properties，只綁 127.0.0.1，不對區網開放。
+# Local development MySQL. Bound to 127.0.0.1 only, not exposed to the LAN.
+# Credentials come from backend/backend/.env, so always pass it explicitly:
+#   docker compose --env-file backend/backend/.env up -d --wait
+# The app connects with a dedicated account (DB_USERNAME) that only has rights on sample_0702.
+# The root password is random and printed once in the container log; the app never uses root.
 name: crm
 
 services:
@@ -6,14 +10,16 @@ services:
     image: mysql:8.0.40
     container_name: crm-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
       MYSQL_DATABASE: sample_0702
+      MYSQL_USER: ${DB_USERNAME:?Set DB_USERNAME in backend/backend/.env and pass --env-file backend/backend/.env}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in backend/backend/.env and pass --env-file backend/backend/.env}
     ports:
       - "127.0.0.1:3306:3306"
     volumes:
       - crm-mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u\"$$MYSQL_USER\" -p\"$$MYSQL_PASSWORD\" --silent"]
       interval: 5s
       timeout: 3s
       retries: 20
